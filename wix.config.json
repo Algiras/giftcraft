@@ -1,0 +1,5 @@
+{
+  "$schema": "https://dev.wix.com/wix-cli/schemas/wix-config.json",
+  "appId": "0ed8d640-b905-4fb7-b40b-379652fd6d07",
+  "projectId": "giftcraft"
+}
