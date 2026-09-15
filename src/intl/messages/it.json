@@ -1,0 +1,11 @@
+{
+  "app.common.save": "Salva",
+  "app.common.cancel": "Annulla",
+  "app.common.retry": "Riprova",
+  "app.common.delete": "Elimina",
+  "app.common.loading": "Caricamento…",
+  "app.common.upgradeToPro": "Passa a Pro",
+  "app.common.storageSetupNeeded": "Configurazione dell'archiviazione necessaria",
+  "app.common.errorTitle": "Qualcosa è andato storto",
+  "app.title": "Confezione regalo e biglietti"
+}

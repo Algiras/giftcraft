@@ -5,6 +5,8 @@ import {
   hasQualifyingTag,
   validateGreetingMessage,
   evaluateGiftOptions,
+  restrictGiftOptionsForPlan,
+  calculateModifierSelectedGiftFees,
   DEFAULT_CARD_FEE,
 } from '../gift-engine';
 import { GiftOption, CheckoutLineItem, GiftSelection } from '../../types';
@@ -280,5 +282,45 @@ describe('GiftCraft Core Engine Test Suite', () => {
     expect(res.wrapFee).toBe(12.00);
     expect(res.fees.some(f => f.code === 'GIFT_WRAP_FEE' && f.taxDetails?.taxable === true)).toBe(true);
     expect(res.appliedDetails.length).toBeGreaterThan(0);
+  });
+});
+
+describe('Free vs. Pro plan gating (publishing_config.json benefits)', () => {
+  const twoOptions: GiftOption[] = [
+    { id: 'a', name: 'Classic', wrapStyle: 'classic_ribbon', price: 5, characterLimit: 200, freeThreshold: 50, freeCardThreshold: 20, enabled: true, taxable: true, giftWithPurchase: { minSubtotal: 100, giftProductName: 'Tag' } },
+    { id: 'b', name: 'Luxury', wrapStyle: 'luxury_gold', price: 10, characterLimit: 200, enabled: true, taxable: true },
+  ];
+
+  it('leaves options untouched for a paid instance', () => {
+    expect(restrictGiftOptionsForPlan(twoOptions, { status: 'paid' })).toEqual(twoOptions);
+  });
+
+  it('limits a free instance to one enabled option and strips Pro-only fields', () => {
+    const restricted = restrictGiftOptionsForPlan(twoOptions, { status: 'free' });
+    expect(restricted[0].enabled).toBe(true);
+    expect(restricted[1].enabled).toBe(false);
+    expect(restricted[0].freeThreshold).toBeUndefined();
+    expect(restricted[0].freeCardThreshold).toBeUndefined();
+    expect(restricted[0].giftWithPurchase).toBeUndefined();
+  });
+
+  it('fails closed (treats "unavailable" like free) when entitlement cannot be confirmed', () => {
+    const restricted = restrictGiftOptionsForPlan(twoOptions, { status: 'unavailable' });
+    expect(restricted.filter(o => o.enabled)).toHaveLength(1);
+  });
+
+  it('does not charge a Pro-only greeting-card fee for a free-plan instance', () => {
+    const options: GiftOption[] = [{ id: 'classic', name: 'Classic', wrapStyle: 'classic_ribbon', price: 5, characterLimit: 200, freeCardThreshold: 1000, enabled: true, taxable: true }];
+    const lineItems: CheckoutLineItem[] = [{ id: 'line-1', quantity: 1, price: 20, modifierGroups: [
+      { name: 'GiftCraft wrap', modifiers: [{ label: 'Classic', quantity: 1 }] },
+      { name: 'GiftCraft greeting card', modifiers: [{ label: 'Yes' }] },
+    ] }];
+
+    const paidFees = calculateModifierSelectedGiftFees(lineItems, options, { status: 'paid' });
+    expect(paidFees.some(f => f.code.startsWith('GIFT_CARD_'))).toBe(true);
+
+    const freeFees = calculateModifierSelectedGiftFees(lineItems, options, { status: 'free' });
+    expect(freeFees.some(f => f.code.startsWith('GIFT_CARD_'))).toBe(false);
+    expect(freeFees.some(f => f.code.startsWith('GIFT_WRAP_'))).toBe(true);
   });
 });

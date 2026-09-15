@@ -1,0 +1,11 @@
+{
+  "app.common.save": "Enregistrer",
+  "app.common.cancel": "Annuler",
+  "app.common.retry": "Réessayer",
+  "app.common.delete": "Supprimer",
+  "app.common.loading": "Chargement…",
+  "app.common.upgradeToPro": "Passer à Pro",
+  "app.common.storageSetupNeeded": "Configuration du stockage requise",
+  "app.common.errorTitle": "Une erreur est survenue",
+  "app.title": "Emballage cadeau et cartes"
+}

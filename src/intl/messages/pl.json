@@ -1,0 +1,11 @@
+{
+  "app.common.save": "Zapisz",
+  "app.common.cancel": "Anuluj",
+  "app.common.retry": "Ponów",
+  "app.common.delete": "Usuń",
+  "app.common.loading": "Ładowanie…",
+  "app.common.upgradeToPro": "Ulepsz do Pro",
+  "app.common.storageSetupNeeded": "Wymagana konfiguracja pamięci masowej",
+  "app.common.errorTitle": "Coś poszło nie tak",
+  "app.title": "Pakowanie prezentów i karty"
+}

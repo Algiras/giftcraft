@@ -1,0 +1,11 @@
+{
+  "app.common.save": "Speichern",
+  "app.common.cancel": "Abbrechen",
+  "app.common.retry": "Erneut versuchen",
+  "app.common.delete": "Löschen",
+  "app.common.loading": "Ladevorgang…",
+  "app.common.upgradeToPro": "Auf Pro upgraden",
+  "app.common.storageSetupNeeded": "Speichereinrichtung erforderlich",
+  "app.common.errorTitle": "Etwas ist schiefgelaufen",
+  "app.title": "Geschenkverpackung & Karten"
+}

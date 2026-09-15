@@ -1,0 +1,11 @@
+{
+  "app.common.save": "Opslaan",
+  "app.common.cancel": "Annuleren",
+  "app.common.retry": "Opnieuw proberen",
+  "app.common.delete": "Verwijderen",
+  "app.common.loading": "Laden…",
+  "app.common.upgradeToPro": "Upgraden naar Pro",
+  "app.common.storageSetupNeeded": "Opslagconfiguratie nodig",
+  "app.common.errorTitle": "Er ging iets mis",
+  "app.title": "Cadeauverpakking & kaarten"
+}

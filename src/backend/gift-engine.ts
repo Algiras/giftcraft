@@ -4,11 +4,106 @@ import {
   GiftEvaluationInput,
   GiftEvaluationResult,
   WixAdditionalFee,
-  GiftSelection,
 } from '../types';
-import { logger } from '../shared/logger';
+import { emitDiagnostic, logger } from '../shared/logger';
+import { AppEntitlement, canUsePaidFeatures } from '../shared/entitlement';
 
 export const DEFAULT_CARD_FEE = 2.50;
+export const WRAP_MODIFIER_GROUP = 'GiftCraft wrap';
+export const GREETING_CARD_MODIFIER_GROUP = 'GiftCraft greeting card';
+
+/** Free-plan benefits, straight from publishing_config.json's Basic plan: one standard
+ *  gift-wrap option, charged at a flat rate. Everything else (multiple wrap styles,
+ *  greeting cards, gift-with-purchase threshold rules) is Pro-only. */
+export const FREE_PLAN_MAX_ENABLED_OPTIONS = 1;
+
+function normalized(value?: string): string {
+  return value?.trim().toLocaleLowerCase() ?? '';
+}
+
+/**
+ * Applies the Basic-vs-Pro plan limits from publishing_config.json to a merchant's
+ * saved gift options: at most one enabled option, no free-threshold waivers, and no
+ * gift-with-purchase incentives. Must be applied both in dashboard previews and before
+ * any fee is charged, so a free-plan merchant can never save (or have applied) a Pro rule.
+ */
+export function restrictGiftOptionsForPlan(options: GiftOption[], entitlement: AppEntitlement): GiftOption[] {
+  if (canUsePaidFeatures(entitlement)) return options;
+  let usedFreeSlot = false;
+  return options.map(option => {
+    const keepEnabled = option.enabled && !usedFreeSlot;
+    if (keepEnabled) usedFreeSlot = true;
+    return {
+      ...option,
+      enabled: keepEnabled,
+      freeThreshold: undefined,
+      freeCardThreshold: undefined,
+      giftWithPurchase: undefined,
+    };
+  });
+}
+
+/**
+ * Creates native Wix additional fees only from a shopper's product-modifier
+ * selection. A merchant configuration alone can never create a fee. `entitlement`
+ * gates Pro-only benefits (multiple wrap options, greeting-card fees) so the SPI
+ * never applies a Pro rule for a free instance, defaulting to `paid` only for
+ * callers (existing tests, tools) that intentionally exercise unrestricted output.
+ */
+export function calculateModifierSelectedGiftFees(
+  lineItems: CheckoutLineItem[],
+  options: GiftOption[],
+  entitlement: AppEntitlement = { status: 'paid' }
+): WixAdditionalFee[] {
+  const restrictedOptions = restrictGiftOptionsForPlan(options, entitlement);
+  const allowGreetingCardFee = canUsePaidFeatures(entitlement);
+  const subtotal = calculateSubtotal(lineItems);
+  const fees: WixAdditionalFee[] = [];
+
+  for (const item of lineItems) {
+    const groups = item.modifierGroups ?? [];
+    const selectedNames = groups
+      .filter(group => normalized(group.name) === normalized(WRAP_MODIFIER_GROUP))
+      .flatMap(group => group.modifiers ?? [])
+      .map(modifier => ({ name: normalized(modifier.label), quantity: Math.max(1, modifier.quantity ?? item.quantity ?? 1) }));
+    const greetingSelected = groups.some(group =>
+      normalized(group.name) === normalized(GREETING_CARD_MODIFIER_GROUP) &&
+      (group.modifiers ?? []).some(modifier => ['yes', 'true', 'include'].includes(normalized(modifier.label))),
+    );
+
+    for (const selected of selectedNames) {
+      const option = restrictedOptions.find(candidate => candidate.enabled && normalized(candidate.name) === selected.name);
+      if (!option) continue;
+      const wrapIsFree = option.freeThreshold !== undefined && subtotal >= option.freeThreshold;
+      const cardIsFree = option.freeCardThreshold === undefined || subtotal >= option.freeCardThreshold;
+      const itemId = item.id;
+      if (!wrapIsFree && option.price > 0) {
+        fees.push({
+          code: `GIFT_WRAP_${option.id.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`,
+          name: `Gift wrapping: ${option.name}`.slice(0, 50),
+          price: (option.price * selected.quantity).toFixed(2),
+          taxDetails: { taxable: !!option.taxable },
+          ...(itemId ? { lineItemIds: [itemId] } : {}),
+        });
+      }
+      if (allowGreetingCardFee && greetingSelected && !cardIsFree) {
+        fees.push({
+          code: `GIFT_CARD_${option.id.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`,
+          name: 'Personalized greeting card',
+          price: (DEFAULT_CARD_FEE * selected.quantity).toFixed(2),
+          taxDetails: { taxable: !!option.taxable },
+          ...(itemId ? { lineItemIds: [itemId] } : {}),
+        });
+      }
+    }
+  }
+  emitDiagnostic('fee_rule_evaluated', {
+    outcome: 'success',
+    surface: 'fee_rules',
+    mode: 'real',
+  });
+  return fees;
+}
 
 /**
  * Extracts product or catalog item identifier supporting dual Catalog V1 and Catalog V3 schemas.
@@ -217,6 +312,12 @@ export function evaluateGiftOptions(input: GiftEvaluationInput): GiftEvaluationR
     isFreeCardApplied,
     isGiftWithPurchaseUnlocked,
     characterLimitValid: messageValidation.valid,
+  });
+
+  emitDiagnostic('fee_rule_evaluated', {
+    outcome: 'success',
+    surface: 'dashboard',
+    mode: 'sample',
   });
 
   return {

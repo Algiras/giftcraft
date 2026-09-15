@@ -1,0 +1,11 @@
+{
+  "app.common.save": "Guardar",
+  "app.common.cancel": "Cancelar",
+  "app.common.retry": "Repetir",
+  "app.common.delete": "Eliminar",
+  "app.common.loading": "A carregar…",
+  "app.common.upgradeToPro": "Atualizar para Pro",
+  "app.common.storageSetupNeeded": "Configuração de armazenamento necessária",
+  "app.common.errorTitle": "Algo correu mal",
+  "app.title": "Embalagem de presente e cartões"
+}

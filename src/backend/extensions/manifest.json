@@ -1,0 +1,97 @@
+{
+  "namespace": "@krasalgim/giftcraft",
+  "dataCollections": {
+    "componentName": "GiftCraft private options",
+    "collections": [
+      {
+        "idSuffix": "giftcraft-options",
+        "displayName": "GiftCraftOptions",
+        "displayField": "title",
+        "fields": [
+          {
+            "key": "title",
+            "displayName": "Title",
+            "type": "TEXT"
+          },
+          {
+            "key": "payload",
+            "displayName": "Payload",
+            "type": "OBJECT",
+            "objectOptions": {
+              "fields": []
+            }
+          }
+        ],
+        "dataPermissions": {
+          "itemRead": "PRIVILEGED",
+          "itemInsert": "PRIVILEGED",
+          "itemUpdate": "PRIVILEGED",
+          "itemRemove": "PRIVILEGED"
+        },
+        "indexes": [],
+        "initialData": []
+      }
+    ]
+  },
+  "appTools": {
+    "componentName": "GiftCraft assistant tools",
+    "id": "289c090c-dfaa-4929-8f83-97d1a8cfb931",
+    "name": "giftcraft-tools",
+    "tools": [
+      {
+        "methodName": "get-entitlement",
+        "description": "Returns the current GiftCraft plan entitlement for this site instance, including whether Pro features are active.",
+        "requestSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "responseSchema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string"
+            },
+            "isPaid": {
+              "type": "boolean"
+            }
+          }
+        },
+        "activated": true
+      },
+      {
+        "methodName": "verify-storage",
+        "description": "Checks whether GiftCraft private Wix Data storage is provisioned on this site.",
+        "requestSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "responseSchema": {
+          "type": "object",
+          "properties": {
+            "ready": {
+              "type": "boolean"
+            }
+          }
+        },
+        "activated": true
+      },
+      {
+        "methodName": "describe-config",
+        "description": "Summarizes how many GiftCraft configuration records exist in private storage.",
+        "requestSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "responseSchema": {
+          "type": "object",
+          "properties": {
+            "count": {
+              "type": "number"
+            }
+          }
+        },
+        "activated": true
+      }
+    ]
+  }
+}

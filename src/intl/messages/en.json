@@ -1,0 +1,11 @@
+{
+  "app.common.save": "Save",
+  "app.common.cancel": "Cancel",
+  "app.common.retry": "Retry",
+  "app.common.delete": "Delete",
+  "app.common.loading": "Loading…",
+  "app.common.upgradeToPro": "Upgrade to Pro",
+  "app.common.storageSetupNeeded": "Storage setup needed",
+  "app.common.errorTitle": "Something went wrong",
+  "app.title": "Gift Wrapping & Cards"
+}

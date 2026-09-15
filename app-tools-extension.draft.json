@@ -1,0 +1,59 @@
+{
+  "componentName": "GiftCraft assistant tools",
+  "tools": [
+    {
+      "methodName": "get-entitlement",
+      "description": "Returns the current GiftCraft plan entitlement for this site instance, including whether Pro features are active.",
+      "requestSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "isPaid": {
+            "type": "boolean"
+          }
+        }
+      },
+      "activated": true
+    },
+    {
+      "methodName": "verify-storage",
+      "description": "Checks whether GiftCraft private Wix Data storage is provisioned on this site.",
+      "requestSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "ready": {
+            "type": "boolean"
+          }
+        }
+      },
+      "activated": true
+    },
+    {
+      "methodName": "describe-config",
+      "description": "Summarizes how many GiftCraft configuration records exist in private storage.",
+      "requestSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number"
+          }
+        }
+      },
+      "activated": true
+    }
+  ]
+}

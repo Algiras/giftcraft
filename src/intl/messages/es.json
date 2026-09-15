@@ -1,0 +1,11 @@
+{
+  "app.common.save": "Guardar",
+  "app.common.cancel": "Cancelar",
+  "app.common.retry": "Reintentar",
+  "app.common.delete": "Eliminar",
+  "app.common.loading": "Cargando…",
+  "app.common.upgradeToPro": "Actualizar a Pro",
+  "app.common.storageSetupNeeded": "Configuración de almacenamiento necesaria",
+  "app.common.errorTitle": "Algo salió mal",
+  "app.title": "Envoltorio de regalo y tarjetas"
+}

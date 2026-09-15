@@ -1,0 +1,33 @@
+{
+  "componentName": "GiftCraft private options",
+  "collections": [
+    {
+      "idSuffix": "giftcraft-options",
+      "displayName": "GiftCraftOptions",
+      "displayField": "title",
+      "fields": [
+        {
+          "key": "title",
+          "displayName": "Title",
+          "type": "TEXT"
+        },
+        {
+          "key": "payload",
+          "displayName": "Payload",
+          "type": "OBJECT",
+          "objectOptions": {
+            "fields": []
+          }
+        }
+      ],
+      "dataPermissions": {
+        "itemRead": "PRIVILEGED",
+        "itemInsert": "PRIVILEGED",
+        "itemUpdate": "PRIVILEGED",
+        "itemRemove": "PRIVILEGED"
+      },
+      "indexes": [],
+      "initialData": []
+    }
+  ]
+}

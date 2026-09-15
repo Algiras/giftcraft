@@ -46,6 +46,13 @@ export interface CheckoutLineItem {
   price: number | string;
   tags?: string[];
   categoryId?: string;
+  modifierGroups?: GiftModifierGroup[];
+}
+
+/** The subset of Wix line-item modifier data used by the GiftCraft fee SPI. */
+export interface GiftModifierGroup {
+  name?: string;
+  modifiers?: Array<{ label?: string; quantity?: number }>;
 }
 
 export interface GiftSelection {
@@ -63,6 +70,7 @@ export interface WixAdditionalFee {
   taxDetails?: {
     taxable: boolean;
   };
+  lineItemIds?: string[];
 }
 
 export interface GiftEvaluationInput {

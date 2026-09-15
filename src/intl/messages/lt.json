@@ -1,0 +1,11 @@
+{
+  "app.common.save": "Įrašyti",
+  "app.common.cancel": "Atšaukti",
+  "app.common.retry": "Pakartoti",
+  "app.common.delete": "Ištrinti",
+  "app.common.loading": "Įkeliama…",
+  "app.common.upgradeToPro": "Atnaujinti iki Pro",
+  "app.common.storageSetupNeeded": "Reikalinga saugyklos sąranka",
+  "app.common.errorTitle": "Įvyko klaida",
+  "app.title": "Dovanų pakuotė ir atvirutės"
+}

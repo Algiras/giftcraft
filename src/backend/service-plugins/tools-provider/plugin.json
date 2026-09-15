@@ -1,0 +1,5 @@
+{
+  "$schema": "https://dev.wix.com/wix-cli/schemas/tools-provider.json",
+  "id": "9929ce2f-8b10-453a-b055-48e8ec2a4577",
+  "name": "app-tools-provider"
+}
