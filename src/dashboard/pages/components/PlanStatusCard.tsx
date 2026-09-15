@@ -23,20 +23,20 @@ export function PlanStatusCard({ entitlement, isEntitlementLoading, upgradeUrl, 
 
   return (
     <Card>
-      <Card.Header title={<FormattedMessage id="app.plan.title" defaultMessage="Plan & availability" />} />
+      <Card.Header title={intl.formatMessage({ id: 'app.plan.title', defaultMessage: 'Plan & availability' })} />
       <Card.Content>
         <Box direction="vertical" gap="12px">
           {isPaid ? (
-            <SectionHelper skin="success" title={<FormattedMessage id="app.plan.proActiveTitle" defaultMessage="Pro plan active" />}>
+            <SectionHelper skin="success" title={intl.formatMessage({ id: 'app.plan.proActiveTitle', defaultMessage: 'Pro plan active' })}>
               <FormattedMessage id="app.plan.proActiveBody" defaultMessage="Multiple wrap styles, greeting cards, and gift-with-purchase rules are unlocked for this site." />
             </SectionHelper>
           ) : (
-            <SectionHelper skin="premium" title={<FormattedMessage id="app.plan.basicTitle" defaultMessage="You're on the Basic (free) plan" />}>
+            <SectionHelper skin="premium" title={intl.formatMessage({ id: 'app.plan.basicTitle', defaultMessage: 'You\'re on the Basic (free) plan' })}>
               <FormattedMessage id="app.plan.basicBody" defaultMessage="Basic includes one gift-wrap option with a flat fee. Upgrade to Pro for multiple wrapping styles, greeting cards, and gift-with-purchase threshold rules." />
             </SectionHelper>
           )}
           <Box align="space-between" verticalAlign="middle" gap="12px">
-            <TextButton size="small" as="a" href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(supportSubject)}`}>
+            <TextButton size="small" as="a" href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(supportSubject)}`} target="_blank" rel="noopener noreferrer">
               <FormattedMessage id="app.plan.contactSupport" defaultMessage="Contact support" />
             </TextButton>
             {!isPaid && (

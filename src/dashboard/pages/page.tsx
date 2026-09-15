@@ -26,7 +26,36 @@ interface ErrorBoundaryState {
   hasError: boolean;
   error: string;
 }
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export /** Error fallback lives in a function component so it can use the `useIntl`
+ * hook; a class component cannot, and Wix Design System string props such as
+ * `title`/`subtitle` must receive strings rather than elements. */
+function ErrorBoundaryFallback({ error, onRetry }: { error: string; onRetry: () => void }) {
+  const intl = useIntl();
+  return <WixDesignSystemProvider>
+      <Page height="100vh">
+        <Page.Header title={intl.formatMessage({ id: 'app.error.pageTitle', defaultMessage: 'GiftCraft: Wrap & Cards' })} subtitle={intl.formatMessage({ id: 'app.error.recoveringSubtitle', defaultMessage: 'Error recovering dashboard view' })} />
+        <Page.Content>
+          <Card>
+            <Card.Content>
+              <Box direction="vertical" gap="12px">
+                <Heading size="small"><FormattedMessage id="app.error.loadFailedHeading" defaultMessage="Something went wrong loading the dashboard." /></Heading>
+                <Text size="small" secondary>
+                  {error || <FormattedMessage id="app.error.unexpectedError" defaultMessage="An unexpected error occurred in the dashboard." />}
+                </Text>
+                <Box gap="8px">
+                  <Button size="small" onClick={onRetry}>
+                    <FormattedMessage id="app.error.tryAgain" defaultMessage="Try again" />
+                  </Button>
+                </Box>
+              </Box>
+            </Card.Content>
+          </Card>
+        </Page.Content>
+      </Page>
+    </WixDesignSystemProvider>;
+}
+
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
@@ -52,31 +81,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
   render() {
     if (this.state.hasError) {
-      return <WixDesignSystemProvider>
-          <Page height="100vh">
-            <Page.Header title={<FormattedMessage id="app.error.pageTitle" defaultMessage="GiftCraft: Wrap & Cards" />} subtitle={<FormattedMessage id="app.error.recoveringSubtitle" defaultMessage="Error recovering dashboard view" />} />
-            <Page.Content>
-              <Card>
-                <Card.Content>
-                  <Box direction="vertical" gap="12px">
-                    <Heading size="small"><FormattedMessage id="app.error.loadFailedHeading" defaultMessage="Something went wrong loading the dashboard." /></Heading>
-                    <Text size="small" secondary>
-                      {this.state.error || <FormattedMessage id="app.error.unexpectedError" defaultMessage="An unexpected error occurred in the dashboard." />}
-                    </Text>
-                    <Box gap="8px">
-                      <Button size="small" onClick={() => this.setState({
-                      hasError: false,
-                      error: ''
-                    })}>
-                        <FormattedMessage id="app.error.tryAgain" defaultMessage="Try again" />
-                      </Button>
-                    </Box>
-                  </Box>
-                </Card.Content>
-              </Card>
-            </Page.Content>
-          </Page>
-        </WixDesignSystemProvider>;
+      return <ErrorBoundaryFallback error={this.state.error} onRetry={() => this.setState({ hasError: false, error: '' })} />;
     }
     return this.props.children;
   }
@@ -331,7 +336,7 @@ export function GiftCraftDashboard() {
   }, [enabledOptions.map(o => o.id).join(',')]);
   return <>
     <Page height="100vh">
-      <Page.Header title={<FormattedMessage id="app.page.title" defaultMessage="GiftCraft: Gift Wrapping & Greeting Cards" />} subtitle={<FormattedMessage id="app.page.subtitle" defaultMessage="Configure gift-wrap fees, an optional greeting card, and preview how they apply at checkout." />} actionsBar={<Box gap="12px">
+      <Page.Header title={intl.formatMessage({ id: 'app.page.title', defaultMessage: 'GiftCraft: Gift Wrapping & Greeting Cards' })} subtitle={intl.formatMessage({ id: 'app.page.subtitle', defaultMessage: 'Configure gift-wrap fees, an optional greeting card, and preview how they apply at checkout.' })} actionsBar={<Box gap="12px">
             <Button priority="secondary" disabled={!storageReady || busy} onClick={() => setIsAddModalOpen(true)}>
               <FormattedMessage id="app.page.addGiftOption" defaultMessage="+ Add gift option" />
             </Button>
@@ -344,10 +349,10 @@ export function GiftCraftDashboard() {
         {isInitialLoad ? <Card>
             <Card.Content>
               <Box align="center" verticalAlign="middle" padding="40px">
-                <Loader text={<FormattedMessage id="app.page.loadingConfiguration" defaultMessage="Loading your GiftCraft configuration..." />} />
+                <Loader text={intl.formatMessage({ id: 'app.page.loadingConfiguration', defaultMessage: 'Loading your GiftCraft configuration...' })} />
               </Box>
             </Card.Content>
-          </Card> : ecommerceInstalled === false ? <EmptyState theme="page" title={<FormattedMessage id="app.page.emptyStateTitle" defaultMessage="Add Wix Stores to use GiftCraft" />} subtitle={<FormattedMessage id="app.page.emptyStateSubtitle" defaultMessage="GiftCraft charges gift-wrap and greeting-card fees at checkout. Add Wix Stores (or another Wix eCommerce app) to this site, then return here to configure your options." />}>
+          </Card> : ecommerceInstalled === false ? <EmptyState theme="page" title={intl.formatMessage({ id: 'app.page.emptyStateTitle', defaultMessage: 'Add Wix Stores to use GiftCraft' })} subtitle={intl.formatMessage({ id: 'app.page.emptyStateSubtitle', defaultMessage: 'GiftCraft charges gift-wrap and greeting-card fees at checkout. Add Wix Stores (or another Wix eCommerce app) to this site, then return here to configure your options.' })}>
             <Button as="a" href={WIX_STORES_APP_MARKET_URL} target="_blank" rel="noopener noreferrer">
               <FormattedMessage id="app.page.addWixStores" defaultMessage="Add Wix Stores" />
             </Button>

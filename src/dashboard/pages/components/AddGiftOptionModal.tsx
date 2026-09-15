@@ -105,7 +105,7 @@ export function AddGiftOptionModal({ isOpen, isPaid, onClose, onCreate }: AddGif
           </FormField>
 
           {!isPaid && (
-            <SectionHelper skin="premium" title={<FormattedMessage id="app.addModal.proOnlyTitle" defaultMessage="Pro-only settings" />}>
+            <SectionHelper skin="premium" title={intl.formatMessage({ id: 'app.addModal.proOnlyTitle', defaultMessage: 'Pro-only settings' })}>
               <FormattedMessage
                 id="app.addModal.proOnlyBody"
                 defaultMessage="Free-wrap thresholds, greeting cards, and gift-with-purchase rules are part of the Pro plan. Upgrade to configure them for this option."

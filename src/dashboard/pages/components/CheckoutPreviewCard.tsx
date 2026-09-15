@@ -153,7 +153,7 @@ export function CheckoutPreviewCard({
 
             <Heading size="small"><FormattedMessage id="app.preview.step3Heading" defaultMessage="3. Personalized greeting message" /></Heading>
             {!isPaid ? (
-              <SectionHelper skin="premium" title={<FormattedMessage id="app.preview.proFeatureTitle" defaultMessage="Greeting cards are a Pro feature" />}>
+              <SectionHelper skin="premium" title={intl.formatMessage({ id: 'app.preview.proFeatureTitle', defaultMessage: 'Greeting cards are a Pro feature' })}>
                 <FormattedMessage id="app.preview.proFeatureBody" defaultMessage="Upgrade to Pro to let shoppers add a personalized greeting card at checkout." />
               </SectionHelper>
             ) : (
@@ -209,7 +209,7 @@ export function CheckoutPreviewCard({
             )}
 
             {simResult.isGiftWithPurchaseUnlocked && simResult.giftWithPurchaseItem && (
-              <SectionHelper skin="warning" size="small" title={<FormattedMessage id="app.preview.qualifiedGift" defaultMessage="Qualified for free gift" />}>
+              <SectionHelper skin="warning" size="small" title={intl.formatMessage({ id: 'app.preview.qualifiedGift', defaultMessage: 'Qualified for free gift' })}>
                 {simResult.giftWithPurchaseItem}
               </SectionHelper>
             )}

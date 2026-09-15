@@ -69,7 +69,7 @@ export function StorageStatusCard({
         <Card>
           <Card.Content>
             <Box direction="vertical" gap="8px">
-              <SectionHelper skin="warning" title={<FormattedMessage id={recoveryTitleId(storageState)} defaultMessage="Setup needed before you can save gift options" />}>
+              <SectionHelper skin="warning" title={intl.formatMessage({ id: recoveryTitleId(storageState), defaultMessage: 'Setup needed before you can save gift options' })}>
                 <FormattedMessage id={bodyMessage.id} defaultMessage={bodyMessage.defaultMessage} />
               </SectionHelper>
               {detailsForSupport && (
