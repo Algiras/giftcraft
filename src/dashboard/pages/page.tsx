@@ -329,7 +329,8 @@ export function GiftCraftDashboard() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabledOptions.map(o => o.id).join(',')]);
-  return <Page height="100vh">
+  return <>
+    <Page height="100vh">
       <Page.Header title={<FormattedMessage id="app.page.title" defaultMessage="GiftCraft: Gift Wrapping & Greeting Cards" />} subtitle={<FormattedMessage id="app.page.subtitle" defaultMessage="Configure gift-wrap fees, an optional greeting card, and preview how they apply at checkout." />} actionsBar={<Box gap="12px">
             <Button priority="secondary" disabled={!storageReady || busy} onClick={() => setIsAddModalOpen(true)}>
               <FormattedMessage id="app.page.addGiftOption" defaultMessage="+ Add gift option" />
@@ -390,11 +391,14 @@ export function GiftCraftDashboard() {
             <CheckoutPreviewCard isPaid={isPaid} simItems={simItems} onUpdateQuantity={updateSimQuantity} onAddItem={addSimItem} enabledOptions={enabledOptions} selectedOptionId={selectedOptionId} onSelectOption={setSelectedOptionId} includeGreetingCard={includeGreetingCard} onToggleGreetingCard={() => setIncludeGreetingCard(!includeGreetingCard)} greetingMessage={greetingMessage} onGreetingMessageChange={setGreetingMessage} currentOption={currentOption} charValidation={charValidation} simSubtotal={simSubtotal} simResult={simResult} />
           </Box>}
       </Page.Content>
+    </Page>
 
-      <AddGiftOptionModal isOpen={isAddModalOpen} isPaid={isPaid} onClose={() => setIsAddModalOpen(false)} onCreate={handleCreateOption} />
+    {/* Page only recognizes Page.Header/Page.Content/Page.Tail children and silently drops
+        anything else, so these modals must render as Page's siblings, not its children. */}
+    <AddGiftOptionModal isOpen={isAddModalOpen} isPaid={isPaid} onClose={() => setIsAddModalOpen(false)} onCreate={handleCreateOption} />
 
-      <DeleteConfirmModal option={deleteTarget} onCancel={() => setDeleteTarget(null)} onConfirm={confirmDeleteOption} />
-    </Page>;
+    <DeleteConfirmModal option={deleteTarget} onCancel={() => setDeleteTarget(null)} onConfirm={confirmDeleteOption} />
+  </>;
 }
 function GiftCraftDashboardRoot() {
   return <ErrorBoundary>

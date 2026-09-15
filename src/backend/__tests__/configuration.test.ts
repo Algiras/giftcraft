@@ -4,16 +4,24 @@ const db = vi.hoisted(() => ({ entries: undefined as unknown, fail: false }));
 
 vi.mock('@wix/data', () => ({
   items: {
-    query: vi.fn(() => ({
-      eq: () => ({
-        find: async () => {
-          if (db.fail) throw new Error('denied');
-          return {
-            items: db.entries === undefined ? [] : [{ payload: { entries: structuredClone(db.entries) } }],
-          };
-        },
-      }),
-    })),
+    query: vi.fn(() => {
+      const find = async () => {
+        if (db.fail) throw new Error('denied');
+        return {
+          items: db.entries === undefined ? [] : [{ payload: { entries: structuredClone(db.entries) } }],
+          hasNext: () => false,
+          next: async () => {
+            throw new Error('next() should not be called when hasNext() is false');
+          },
+        };
+      };
+      return {
+        eq: () => ({
+          find,
+          limit: () => ({ find }),
+        }),
+      };
+    }),
     save: async (_collection: string, item: { payload: { entries: unknown } }) => {
       if (db.fail) throw new Error('denied');
       db.entries = structuredClone(item.payload.entries);
