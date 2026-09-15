@@ -80,6 +80,22 @@ export interface GiftEvaluationInput {
   options: GiftOption[];
 }
 
+/**
+ * A structured, translation-ready evaluation detail. `gift-engine.ts` (a shared helper
+ * whose output is rendered in the dashboard preview) must never bake English sentences
+ * into these — it emits a stable `code` plus raw numeric/string `values`, and the
+ * dashboard component maps the code to a localized ICU message.
+ */
+export type GiftEvaluationDetail =
+  | { code: 'NO_OPTION_SELECTED' }
+  | { code: 'OPTION_UNAVAILABLE' }
+  | { code: 'FREE_WRAP_APPLIED'; values: { subtotal: number; threshold: number } }
+  | { code: 'WRAP_FEE_APPLIED'; values: { name: string; fee: number } }
+  | { code: 'FREE_CARD_APPLIED'; values: { threshold: number } }
+  | { code: 'CARD_FEE_APPLIED'; values: { fee: number; threshold: number } }
+  | { code: 'CARD_INCLUDED' }
+  | { code: 'GIFT_WITH_PURCHASE_UNLOCKED'; values: { giftName: string } };
+
 export interface GiftEvaluationResult {
   eligible: boolean;
   wrapFee: number;
@@ -92,6 +108,6 @@ export interface GiftEvaluationResult {
   giftWithPurchaseItem?: string;
   characterLimitValid: boolean;
   appliedOption?: GiftOption;
-  appliedDetails: string[];
+  appliedDetails: GiftEvaluationDetail[];
   cartSubtotal: number;
 }

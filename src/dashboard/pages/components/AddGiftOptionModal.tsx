@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Box, CustomModalLayout, FormField, Input, Modal, NumberInput, SectionHelper, Text } from '@wix/design-system';
+import { FormattedMessage, useIntl } from 'react-intl';
 import { GiftOption, WrapStyle } from '../../../types';
 
 interface AddGiftOptionModalProps {
@@ -12,6 +13,7 @@ interface AddGiftOptionModalProps {
 const WRAP_STYLES: WrapStyle[] = ['classic_ribbon', 'luxury_gold', 'eco_kraft', 'holiday_festive', 'custom'];
 
 export function AddGiftOptionModal({ isOpen, isPaid, onClose, onCreate }: AddGiftOptionModalProps) {
+  const intl = useIntl();
   const [name, setName] = useState('');
   const [wrapStyle, setWrapStyle] = useState<WrapStyle>('classic_ribbon');
   const [price, setPrice] = useState(5);
@@ -41,7 +43,7 @@ export function AddGiftOptionModal({ isOpen, isPaid, onClose, onCreate }: AddGif
 
   const handleCreate = () => {
     if (!name.trim()) {
-      setNameError('Enter a name that matches the store modifier option label.');
+      setNameError(intl.formatMessage({ id: 'app.addModal.nameError', defaultMessage: 'Enter a name that matches the store modifier option label.' }));
       return;
     }
     onCreate({
@@ -63,55 +65,57 @@ export function AddGiftOptionModal({ isOpen, isPaid, onClose, onCreate }: AddGif
   return (
     <Modal isOpen={isOpen} onRequestClose={handleClose} shouldCloseOnOverlayClick>
       <CustomModalLayout
-        title="Add a gift-wrap option"
-        primaryButtonText="Save gift option"
-        secondaryButtonText="Cancel"
+        title={intl.formatMessage({ id: 'app.addModal.title', defaultMessage: 'Add a gift-wrap option' })}
+        primaryButtonText={intl.formatMessage({ id: 'app.addModal.saveButton', defaultMessage: 'Save gift option' })}
+        secondaryButtonText={intl.formatMessage({ id: 'app.common.cancel', defaultMessage: 'Cancel' })}
         closeButtonProps={{ onClick: handleClose }}
         secondaryButtonOnClick={handleClose}
         primaryButtonOnClick={handleCreate}
       >
         <Box direction="vertical" gap="16px">
           <FormField
-            label="Option name"
+            label={intl.formatMessage({ id: 'app.addModal.nameLabel', defaultMessage: 'Option name' })}
             required
-            infoContent="Must exactly match the option label on your store's “GiftCraft wrap” product modifier."
+            infoContent={intl.formatMessage({ id: 'app.addModal.nameInfo', defaultMessage: 'Must exactly match the option label on your store\'s "GiftCraft wrap" product modifier.' })}
             status={nameError ? 'error' : undefined}
             statusMessage={nameError}
           >
-            <Input value={name} onChange={(e: any) => setName(e.target.value)} placeholder="e.g. Classic Crimson Ribbon" />
+            <Input value={name} onChange={(e: any) => setName(e.target.value)} placeholder={intl.formatMessage({ id: 'app.addModal.namePlaceholder', defaultMessage: 'e.g. Classic Crimson Ribbon' })} />
           </FormField>
 
           <Box gap="16px">
             <Box flexGrow={1}>
-              <FormField label="Wrap style">
+              <FormField label={intl.formatMessage({ id: 'app.addModal.wrapStyleLabel', defaultMessage: 'Wrap style' })}>
                 <Input
                   value={wrapStyle}
                   onChange={(e: any) => setWrapStyle(e.target.value as WrapStyle)}
-                  placeholder={WRAP_STYLES.join(', ')}
+                  placeholder={intl.formatMessage({ id: 'app.addModal.wrapStylePlaceholder', defaultMessage: 'e.g. {styles}' }, { styles: WRAP_STYLES.join(', ') })}
                 />
               </FormField>
             </Box>
             <Box flexGrow={1}>
-              <FormField label="Wrap fee" required infoContent="Charged when the shopper selects this wrap option.">
+              <FormField label={intl.formatMessage({ id: 'app.addModal.wrapFeeLabel', defaultMessage: 'Wrap fee' })} required infoContent={intl.formatMessage({ id: 'app.addModal.wrapFeeInfo', defaultMessage: 'Charged when the shopper selects this wrap option.' })}>
                 <NumberInput value={price} onChange={(value: number | null) => setPrice(value ?? 0)} prefix={<Text>$</Text>} min={0} step={0.5} />
               </FormField>
             </Box>
           </Box>
 
-          <FormField label="Greeting message character limit" infoContent="Shown to shoppers as the maximum length for a personalized message.">
+          <FormField label={intl.formatMessage({ id: 'app.addModal.charLimitLabel', defaultMessage: 'Greeting message character limit' })} infoContent={intl.formatMessage({ id: 'app.addModal.charLimitInfo', defaultMessage: 'Shown to shoppers as the maximum length for a personalized message.' })}>
             <NumberInput value={characterLimit} onChange={(value: number | null) => setCharacterLimit(value ?? 200)} min={1} step={10} />
           </FormField>
 
           {!isPaid && (
-            <SectionHelper skin="premium" title="Pro-only settings">
-              Free-wrap thresholds, greeting cards, and gift-with-purchase rules are part of the Pro plan. Upgrade to
-              configure them for this option.
+            <SectionHelper skin="premium" title={<FormattedMessage id="app.addModal.proOnlyTitle" defaultMessage="Pro-only settings" />}>
+              <FormattedMessage
+                id="app.addModal.proOnlyBody"
+                defaultMessage="Free-wrap thresholds, greeting cards, and gift-with-purchase rules are part of the Pro plan. Upgrade to configure them for this option."
+              />
             </SectionHelper>
           )}
 
           <Box gap="16px">
             <Box flexGrow={1}>
-              <FormField label="Free wrap over subtotal" infoContent="Leave blank to always charge the wrap fee.">
+              <FormField label={intl.formatMessage({ id: 'app.addModal.freeWrapLabel', defaultMessage: 'Free wrap over subtotal' })} infoContent={intl.formatMessage({ id: 'app.addModal.freeWrapInfo', defaultMessage: 'Leave blank to always charge the wrap fee.' })}>
                 <NumberInput
                   disabled={!isPaid}
                   value={freeThreshold}
@@ -122,7 +126,7 @@ export function AddGiftOptionModal({ isOpen, isPaid, onClose, onCreate }: AddGif
               </FormField>
             </Box>
             <Box flexGrow={1}>
-              <FormField label="Free greeting card over subtotal">
+              <FormField label={intl.formatMessage({ id: 'app.addModal.freeCardLabel', defaultMessage: 'Free greeting card over subtotal' })}>
                 <NumberInput
                   disabled={!isPaid}
                   value={freeCardThreshold}
@@ -136,12 +140,12 @@ export function AddGiftOptionModal({ isOpen, isPaid, onClose, onCreate }: AddGif
 
           <Box gap="16px">
             <Box flexGrow={1}>
-              <FormField label="Gift-with-purchase item (optional)">
-                <Input disabled={!isPaid} value={gwpProduct} onChange={(e: any) => setGwpProduct(e.target.value)} placeholder="e.g. Deluxe keepsake tag" />
+              <FormField label={intl.formatMessage({ id: 'app.addModal.gwpProductLabel', defaultMessage: 'Gift-with-purchase item (optional)' })}>
+                <Input disabled={!isPaid} value={gwpProduct} onChange={(e: any) => setGwpProduct(e.target.value)} placeholder={intl.formatMessage({ id: 'app.addModal.gwpProductPlaceholder', defaultMessage: 'e.g. Deluxe keepsake tag' })} />
               </FormField>
             </Box>
             <Box flexGrow={1}>
-              <FormField label="Gift-with-purchase minimum subtotal">
+              <FormField label={intl.formatMessage({ id: 'app.addModal.gwpSubtotalLabel', defaultMessage: 'Gift-with-purchase minimum subtotal' })}>
                 <NumberInput
                   disabled={!isPaid}
                   value={gwpSubtotal}

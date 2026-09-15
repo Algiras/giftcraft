@@ -1,5 +1,5 @@
 import { withIntlProvider } from '../../intl/withIntlProvider';
-import { FormattedMessage } from 'react-intl';
+import { FormattedMessage, useIntl } from 'react-intl';
 import React, { useState, useEffect, useCallback, Component, type ReactNode, type ErrorInfo } from 'react';
 import { WixDesignSystemProvider, Page, Box, Card, Heading, Text, Loader, Button, EmptyState } from '@wix/design-system';
 import '@wix/design-system/styles.global.css';
@@ -37,7 +37,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return {
       hasError: true,
-      error: error.message || 'An unexpected error occurred in the dashboard.'
+      // Raw exception text (when present) is inherently dynamic, unlocalizable content;
+      // the empty-message fallback is rendered via a translated message instead, below.
+      error: error.message || ''
     };
   }
   componentDidCatch(error: Error, info: ErrorInfo): void {
@@ -52,20 +54,22 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (this.state.hasError) {
       return <WixDesignSystemProvider>
           <Page height="100vh">
-            <Page.Header title={<FormattedMessage id="giftcraft.giftcraft-wrap-cards" defaultMessage="GiftCraft: Wrap & Cards" />} subtitle={<FormattedMessage id="giftcraft.error-recovering-dashboard-view" defaultMessage="Error recovering dashboard view" />} />
+            <Page.Header title={<FormattedMessage id="app.error.pageTitle" defaultMessage="GiftCraft: Wrap & Cards" />} subtitle={<FormattedMessage id="app.error.recoveringSubtitle" defaultMessage="Error recovering dashboard view" />} />
             <Page.Content>
               <Card>
                 <Card.Content>
                   <Box direction="vertical" gap="12px">
-                    <Heading size="small"><FormattedMessage id="giftcraft.something-went-wrong-loading-the-dashboa" defaultMessage="Something went wrong loading the dashboard." /></Heading>
-                    <Text size="small" secondary>{this.state.error}</Text>
+                    <Heading size="small"><FormattedMessage id="app.error.loadFailedHeading" defaultMessage="Something went wrong loading the dashboard." /></Heading>
+                    <Text size="small" secondary>
+                      {this.state.error || <FormattedMessage id="app.error.unexpectedError" defaultMessage="An unexpected error occurred in the dashboard." />}
+                    </Text>
                     <Box gap="8px">
                       <Button size="small" onClick={() => this.setState({
                       hasError: false,
                       error: ''
                     })}>
-                        
-                      <FormattedMessage id="giftcraft.try-again" defaultMessage="Try again" /></Button>
+                        <FormattedMessage id="app.error.tryAgain" defaultMessage="Try again" />
+                      </Button>
                     </Box>
                   </Box>
                 </Card.Content>
@@ -109,12 +113,13 @@ const INITIAL_OPTIONS: GiftOption[] = [{
   createdAt: '2026-09-02'
 }];
 export function GiftCraftDashboard() {
+  const intl = useIntl();
   const [options, setOptions] = useState<GiftOption[]>([]);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [storageReady, setStorageReady] = useState(false);
-  const [storageError, setStorageError] = useState<string | null>(null);
-  const [storageErrorDetails, setStorageErrorDetails] = useState<string | undefined>(undefined);
   const [storageState, setStorageState] = useState<StorageSetupState | null>(null);
+  const [storageErrorDetails, setStorageErrorDetails] = useState<string | undefined>(undefined);
+  const [storageRequestId, setStorageRequestId] = useState<string | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const [entitlement, setEntitlement] = useState<AppEntitlement>({
     status: 'unavailable'
@@ -134,7 +139,7 @@ export function GiftCraftDashboard() {
       setEcommerceInstalled(resolveEcommerceInstalled((result as any)?.site?.installedWixApps));
       setEntitlement(prev => {
         if (prev.status !== 'paid' && nextEntitlement.status === 'paid') {
-          showAppToast('Pro plan active - your GiftCraft upgrade is unlocked.', 'success');
+          showAppToast(intl.formatMessage({ id: 'app.page.proPlanActiveToast', defaultMessage: 'Pro plan active - your GiftCraft upgrade is unlocked.' }), 'success');
         }
         return nextEntitlement;
       });
@@ -145,7 +150,7 @@ export function GiftCraftDashboard() {
     } finally {
       setIsEntitlementLoading(false);
     }
-  }, []);
+  }, [intl]);
   const checkStorage = useCallback(async (autoRetry = false) => {
     setBusy(true);
     const start = Date.now();
@@ -154,8 +159,8 @@ export function GiftCraftDashboard() {
       setStorageState(readiness.state);
       if (!readiness.ready) {
         setStorageReady(false);
-        setStorageError(readiness.message);
         setStorageErrorDetails(readiness.details);
+        setStorageRequestId(readiness.requestId);
         emitDiagnostic('storage_verification', {
           outcome: 'failure',
           durationMs: Date.now() - start,
@@ -168,8 +173,8 @@ export function GiftCraftDashboard() {
       const saved = await loadConfiguration<GiftOption>();
       setOptions(saved && saved.length > 0 ? saved : INITIAL_OPTIONS);
       setStorageReady(true);
-      setStorageError(null);
       setStorageErrorDetails(undefined);
+      setStorageRequestId(undefined);
       setStorageState('ready');
       markSetupFinished();
       emitDiagnostic('storage_verification', {
@@ -180,8 +185,8 @@ export function GiftCraftDashboard() {
     } catch (error: any) {
       setStorageReady(false);
       setStorageState('error');
-      setStorageError('We could not confirm storage is set up. Keep this page open and try again, or contact support if this continues.');
       setStorageErrorDetails(String(error?.message || error));
+      setStorageRequestId(extractRequestId(error));
       emitDiagnostic('storage_verification', {
         outcome: 'failure',
         durationMs: Date.now() - start,
@@ -215,14 +220,14 @@ export function GiftCraftDashboard() {
     const start = Date.now();
     try {
       await saveConfiguration(options);
-      showAppToast('Configuration saved.', 'success');
+      showAppToast(intl.formatMessage({ id: 'app.page.configurationSavedToast', defaultMessage: 'Configuration saved.' }), 'success');
       emitDiagnostic('configuration_save', {
         outcome: 'success',
         durationMs: Date.now() - start,
         surface: 'dashboard'
       });
     } catch (error: any) {
-      showAppToast(`Save failed: ${String(error?.message || error)}`, 'error');
+      showAppToast(intl.formatMessage({ id: 'app.page.saveFailedToast', defaultMessage: 'Save failed: {error}' }, { error: String(error?.message || error) }), 'error');
       emitDiagnostic('configuration_save', {
         outcome: 'failure',
         durationMs: Date.now() - start,
@@ -278,7 +283,7 @@ export function GiftCraftDashboard() {
     if (!target) return;
     const enabledCount = options.filter(o => o.enabled).length;
     if (!isPaid && !target.enabled && enabledCount >= FREE_PLAN_MAX_ENABLED_OPTIONS) {
-      showAppToast('The Basic plan includes one active gift-wrap option. Upgrade to Pro to run more at once.', 'error');
+      showAppToast(intl.formatMessage({ id: 'app.page.basicPlanLimitToast', defaultMessage: 'The Basic plan includes one active gift-wrap option. Upgrade to Pro to run more at once.' }), 'error');
       return;
     }
     setOptions(options.map(o => o.id === id ? {
@@ -292,12 +297,12 @@ export function GiftCraftDashboard() {
     setOptions(remaining);
     if (selectedOptionId === option.id && remaining.length > 0) setSelectedOptionId(remaining[0].id);
     setDeleteTarget(null);
-    showAppToast(`Deleted “${option.name}”.`, 'success');
+    showAppToast(intl.formatMessage({ id: 'app.page.deletedOptionToast', defaultMessage: 'Deleted "{name}".' }, { name: option.name }), 'success');
   };
   const handleCreateOption = (option: GiftOption) => {
     setOptions([option, ...options]);
     setIsAddModalOpen(false);
-    showAppToast(`Added “${option.name}”. Click “Save configuration” to keep it.`, 'success');
+    showAppToast(intl.formatMessage({ id: 'app.page.addedOptionToast', defaultMessage: 'Added "{name}". Click "Save configuration" to keep it.' }, { name: option.name }), 'success');
   };
 
   // A2/A12: the preview must reflect exactly what the paid-fee SPI would charge, so it
@@ -325,28 +330,28 @@ export function GiftCraftDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabledOptions.map(o => o.id).join(',')]);
   return <Page height="100vh">
-      <Page.Header title={<FormattedMessage id="giftcraft.giftcraft-gift-wrapping-greeting-cards" defaultMessage="GiftCraft: Gift Wrapping & Greeting Cards" />} subtitle="Configure gift-wrap fees, an optional greeting card, and preview how they apply at checkout." actionsBar={<Box gap="12px">
+      <Page.Header title={<FormattedMessage id="app.page.title" defaultMessage="GiftCraft: Gift Wrapping & Greeting Cards" />} subtitle={<FormattedMessage id="app.page.subtitle" defaultMessage="Configure gift-wrap fees, an optional greeting card, and preview how they apply at checkout." />} actionsBar={<Box gap="12px">
             <Button priority="secondary" disabled={!storageReady || busy} onClick={() => setIsAddModalOpen(true)}>
-              
-            <FormattedMessage id="giftcraft.add-gift-option" defaultMessage="+ Add gift option" /></Button>
+              <FormattedMessage id="app.page.addGiftOption" defaultMessage="+ Add gift option" />
+            </Button>
             <Button priority="primary" disabled={!storageReady || busy} onClick={() => void saveChanges()}>
-              
-            <FormattedMessage id="giftcraft.save-configuration" defaultMessage="Save configuration" /></Button>
+              <FormattedMessage id="app.page.saveConfiguration" defaultMessage="Save configuration" />
+            </Button>
           </Box>} />
 
       <Page.Content>
         {isInitialLoad ? <Card>
             <Card.Content>
               <Box align="center" verticalAlign="middle" padding="40px">
-                <Loader text={<FormattedMessage id="giftcraft.loading-your-giftcraft-configuration" defaultMessage="Loading your GiftCraft configuration..." />} />
+                <Loader text={<FormattedMessage id="app.page.loadingConfiguration" defaultMessage="Loading your GiftCraft configuration..." />} />
               </Box>
             </Card.Content>
-          </Card> : ecommerceInstalled === false ? <EmptyState theme="page" title={<FormattedMessage id="giftcraft.add-wix-stores-to-use-giftcraft" defaultMessage="Add Wix Stores to use GiftCraft" />} subtitle="GiftCraft charges gift-wrap and greeting-card fees at checkout. Add Wix Stores (or another Wix eCommerce app) to this site, then return here to configure your options.">
+          </Card> : ecommerceInstalled === false ? <EmptyState theme="page" title={<FormattedMessage id="app.page.emptyStateTitle" defaultMessage="Add Wix Stores to use GiftCraft" />} subtitle={<FormattedMessage id="app.page.emptyStateSubtitle" defaultMessage="GiftCraft charges gift-wrap and greeting-card fees at checkout. Add Wix Stores (or another Wix eCommerce app) to this site, then return here to configure your options." />}>
             <Button as="a" href={WIX_STORES_APP_MARKET_URL} target="_blank" rel="noopener noreferrer">
-              
-            <FormattedMessage id="giftcraft.add-wix-stores" defaultMessage="Add Wix Stores" /></Button>
+              <FormattedMessage id="app.page.addWixStores" defaultMessage="Add Wix Stores" />
+            </Button>
           </EmptyState> : <Box direction="vertical" gap="16px">
-            <StorageStatusCard storageReady={storageReady} storageError={storageError} storageErrorDetails={storageErrorDetails} storageState={storageState} busy={busy} onRetry={() => void checkStorage(storageState === 'provisioning' || storageState === 'timeout')} />
+            <StorageStatusCard storageReady={storageReady} storageState={storageState} storageErrorDetails={storageErrorDetails} storageRequestId={storageRequestId} busy={busy} onRetry={() => void checkStorage(storageState === 'provisioning' || storageState === 'timeout')} />
 
             <PlanStatusCard entitlement={entitlement} isEntitlementLoading={isEntitlementLoading} upgradeUrl={upgradeUrl} onUpgrade={handleUpgrade} />
 
@@ -354,27 +359,27 @@ export function GiftCraftDashboard() {
               <Box width="33%">
                 <Card>
                   <Card.Content>
-                    <Text secondary size="small"><FormattedMessage id="giftcraft.active-gift-options" defaultMessage="Active gift options" /></Text>
-                    <Heading size="medium">{activeCount} of {options.length} <FormattedMessage id="giftcraft.active" defaultMessage="active" /></Heading>
-                    <Text size="tiny" secondary><FormattedMessage id="giftcraft.configuration-preview-only" defaultMessage="Configuration preview only" /></Text>
+                    <Text secondary size="small"><FormattedMessage id="app.page.activeGiftOptions" defaultMessage="Active gift options" /></Text>
+                    <Heading size="medium"><FormattedMessage id="app.page.activeOfTotal" defaultMessage="{active} of {total} active" values={{ active: activeCount, total: options.length }} /></Heading>
+                    <Text size="tiny" secondary><FormattedMessage id="app.page.configurationPreviewOnly" defaultMessage="Configuration preview only" /></Text>
                   </Card.Content>
                 </Card>
               </Box>
               <Box width="33%">
                 <Card>
                   <Card.Content>
-                    <Text secondary size="small"><FormattedMessage id="giftcraft.shopper-selection" defaultMessage="Shopper selection" /></Text>
-                    <Heading size="medium"><FormattedMessage id="giftcraft.product-modifier" defaultMessage="Product modifier" /></Heading>
-                    <Text size="tiny" secondary><FormattedMessage id="giftcraft.requires-merchant-modifier-setup" defaultMessage="Requires merchant modifier setup" /></Text>
+                    <Text secondary size="small"><FormattedMessage id="app.page.shopperSelection" defaultMessage="Shopper selection" /></Text>
+                    <Heading size="medium"><FormattedMessage id="app.page.productModifier" defaultMessage="Product modifier" /></Heading>
+                    <Text size="tiny" secondary><FormattedMessage id="app.page.requiresMerchantModifierSetup" defaultMessage="Requires merchant modifier setup" /></Text>
                   </Card.Content>
                 </Card>
               </Box>
               <Box width="33%">
                 <Card>
                   <Card.Content>
-                    <Text secondary size="small"><FormattedMessage id="giftcraft.greeting-cards-gift-with-purchase" defaultMessage="Greeting cards & gift-with-purchase" /></Text>
-                    <Heading size="medium">{isPaid ? 'Pro unlocked' : 'Pro only'}</Heading>
-                    <Text size="tiny" secondary><FormattedMessage id="giftcraft.not-added-to-checkout-or-fulfillment" defaultMessage="Not added to checkout or fulfillment" /></Text>
+                    <Text secondary size="small"><FormattedMessage id="app.page.greetingCardsGwp" defaultMessage="Greeting cards & gift-with-purchase" /></Text>
+                    <Heading size="medium">{isPaid ? <FormattedMessage id="app.page.proUnlocked" defaultMessage="Pro unlocked" /> : <FormattedMessage id="app.page.proOnly" defaultMessage="Pro only" />}</Heading>
+                    <Text size="tiny" secondary><FormattedMessage id="app.page.notAddedToCheckout" defaultMessage="Not added to checkout or fulfillment" /></Text>
                   </Card.Content>
                 </Card>
               </Box>

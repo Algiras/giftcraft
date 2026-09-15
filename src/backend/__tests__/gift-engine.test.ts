@@ -118,7 +118,7 @@ describe('GiftCraft Core Engine Test Suite', () => {
     expect(res.totalFee).toBe(0);
     expect(res.isFreeWrapApplied).toBe(true);
     expect(res.fees.length).toBe(0);
-    expect(res.appliedDetails.some(d => d.includes('Complimentary Gift Wrapping'))).toBe(true);
+    expect(res.appliedDetails.some(d => d.code === 'FREE_WRAP_APPLIED')).toBe(true);
   });
 
   it('4. charges greeting card fee when below freeCardThreshold, and waives when met', () => {
@@ -230,7 +230,7 @@ describe('GiftCraft Core Engine Test Suite', () => {
 
     expect(res.eligible).toBe(false);
     expect(res.totalFee).toBe(0);
-    expect(res.appliedDetails[0]).toContain('disabled or does not exist');
+    expect(res.appliedDetails[0].code).toBe('OPTION_UNAVAILABLE');
   });
 
   it('10. handles empty carts or missing gift selection safely', () => {

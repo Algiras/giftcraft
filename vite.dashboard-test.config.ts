@@ -23,9 +23,20 @@ function wixServiceMocks(): Plugin {
         }
       };
     `,
+    essentials: `
+      function currentLang() {
+        const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+        return (params && params.get('lang')) || 'en';
+      }
+      export const i18n = {
+        getLanguage: () => currentLang(),
+        getLocale: () => currentLang(),
+      };
+    `,
     logger: `
       export const emitDiagnostic = () => {};
       export const markSetupFinished = () => {};
+      export const markDashboardLoaded = () => {};
       export const logger = {
         time: async (_action, fn) => fn(),
         info: () => {},
@@ -77,6 +88,14 @@ function wixServiceMocks(): Plugin {
         return true;
       };
 
+      export const assessConfigurationStorage = async () => {
+        const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+        if (params && params.get('storage') === 'unverified') {
+          return { ready: false, state: 'error', message: '', details: undefined, requestId: undefined };
+        }
+        return { ready: true, state: 'ready', message: '' };
+      };
+
       export const loadConfiguration = async () => [...mockOptions];
 
       export const saveConfiguration = async (entries) => {
@@ -96,6 +115,7 @@ function wixServiceMocks(): Plugin {
     enforce: 'pre',
     resolveId(source, importer) {
       if (source === '@wix/app-management') return virtual('app-management');
+      if (source === '@wix/essentials') return virtual('essentials');
       if (!importer?.endsWith('/src/dashboard/pages/page.tsx')) return null;
       const mock = pageImports[source];
       return mock ? virtual(mock) : null;

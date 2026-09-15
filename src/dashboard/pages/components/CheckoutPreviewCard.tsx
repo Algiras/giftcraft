@@ -1,6 +1,49 @@
 import React from 'react';
 import { Badge, Box, Button, Card, Divider, FormField, Heading, Input, SectionHelper, Text, ToggleSwitch } from '@wix/design-system';
-import { CheckoutLineItem, GiftEvaluationResult, GiftOption } from '../../../types';
+import { FormattedMessage, IntlShape, useIntl } from 'react-intl';
+import { CheckoutLineItem, GiftEvaluationDetail, GiftEvaluationResult, GiftOption } from '../../../types';
+
+/**
+ * Maps a structured (translation-ready) evaluation detail from the shared gift-engine
+ * helper to a localized sentence. The engine never bakes English text or currency
+ * symbols into `appliedDetails` - only stable codes and raw values - so this is the
+ * single place that turns them into merchant-facing copy.
+ */
+function formatEvaluationDetail(intl: IntlShape, detail: GiftEvaluationDetail, formatCurrency: (value: number) => string): string {
+  switch (detail.code) {
+    case 'NO_OPTION_SELECTED':
+      return intl.formatMessage({ id: 'app.preview.detail.noOptionSelected', defaultMessage: 'No gift wrapping option selected or available.' });
+    case 'OPTION_UNAVAILABLE':
+      return intl.formatMessage({ id: 'app.preview.detail.optionUnavailable', defaultMessage: 'Selected gift option is disabled or does not exist.' });
+    case 'FREE_WRAP_APPLIED':
+      return intl.formatMessage(
+        { id: 'app.preview.detail.freeWrapApplied', defaultMessage: 'Complimentary gift wrapping: cart subtotal {subtotal} reached the free threshold of {threshold}.' },
+        { subtotal: formatCurrency(detail.values.subtotal), threshold: formatCurrency(detail.values.threshold) }
+      );
+    case 'WRAP_FEE_APPLIED':
+      return intl.formatMessage(
+        { id: 'app.preview.detail.wrapFeeApplied', defaultMessage: 'Gift wrapping ({name}): {fee}.' },
+        { name: detail.values.name, fee: formatCurrency(detail.values.fee) }
+      );
+    case 'FREE_CARD_APPLIED':
+      return intl.formatMessage(
+        { id: 'app.preview.detail.freeCardApplied', defaultMessage: 'Complimentary greeting card: cart subtotal reached the free-card threshold of {threshold}.' },
+        { threshold: formatCurrency(detail.values.threshold) }
+      );
+    case 'CARD_FEE_APPLIED':
+      return intl.formatMessage(
+        { id: 'app.preview.detail.cardFeeApplied', defaultMessage: 'Personalized greeting card: {fee} (spend {threshold} for a free card).' },
+        { fee: formatCurrency(detail.values.fee), threshold: formatCurrency(detail.values.threshold) }
+      );
+    case 'CARD_INCLUDED':
+      return intl.formatMessage({ id: 'app.preview.detail.cardIncluded', defaultMessage: 'Personalized greeting card included.' });
+    case 'GIFT_WITH_PURCHASE_UNLOCKED':
+      return intl.formatMessage(
+        { id: 'app.preview.detail.giftWithPurchaseUnlocked', defaultMessage: 'Bonus gift unlocked: {giftName}.' },
+        { giftName: detail.values.giftName }
+      );
+  }
+}
 
 interface CheckoutPreviewCardProps {
   isPaid: boolean;
@@ -37,21 +80,24 @@ export function CheckoutPreviewCard({
   simSubtotal,
   simResult,
 }: CheckoutPreviewCardProps) {
+  const intl = useIntl();
+  const formatCurrency = (value: number) => intl.formatNumber(value, { style: 'currency', currency: 'USD' });
+
   return (
     <Card>
       <Card.Header
-        title="Option preview"
-        subtitle="Preview how a configured option would calculate with sample cart values. This does not replace a shopper checkout test."
+        title={intl.formatMessage({ id: 'app.preview.title', defaultMessage: 'Option preview' })}
+        subtitle={intl.formatMessage({ id: 'app.preview.subtitle', defaultMessage: 'Preview how a configured option would calculate with sample cart values. This does not replace a shopper checkout test.' })}
         suffix={
           <Button size="small" priority="secondary" onClick={onAddItem}>
-            + Add demo cart item
+            <FormattedMessage id="app.preview.addDemoItem" defaultMessage="+ Add demo cart item" />
           </Button>
         }
       />
       <Card.Content>
         <Box gap="24px">
           <Box direction="vertical" gap="16px" width="60%">
-            <Heading size="small">1. Shopper cart items</Heading>
+            <Heading size="small"><FormattedMessage id="app.preview.step1Heading" defaultMessage="1. Shopper cart items" /></Heading>
             {simItems.map((item, idx) => (
               <Box
                 key={item.id}
@@ -63,9 +109,13 @@ export function CheckoutPreviewCard({
               >
                 <Box direction="vertical" gap="2px">
                   <Text weight="bold">{item.productName}</Text>
-                  <Text secondary size="small">${Number(item.price).toFixed(2)} each</Text>
+                  <Text secondary size="small">
+                    <FormattedMessage id="app.preview.priceEach" defaultMessage="{price} each" values={{ price: formatCurrency(Number(item.price)) }} />
+                  </Text>
                   {item.tags && item.tags.length > 0 && (
-                    <Text size="tiny" skin="premium">Tags: {item.tags.join(', ')}</Text>
+                    <Text size="tiny" skin="premium">
+                      <FormattedMessage id="app.preview.tags" defaultMessage="Tags: {tags}" values={{ tags: item.tags.join(', ') }} />
+                    </Text>
                   )}
                 </Box>
                 <Box verticalAlign="middle" gap="8px">
@@ -73,7 +123,7 @@ export function CheckoutPreviewCard({
                   <Text weight="bold">{item.quantity}</Text>
                   <Button size="small" priority="secondary" onClick={() => onUpdateQuantity(idx, item.quantity + 1)}>+</Button>
                   <Box width="70px" align="right">
-                    <Text weight="bold">${(Number(item.price) * item.quantity).toFixed(2)}</Text>
+                    <Text weight="bold">{formatCurrency(Number(item.price) * item.quantity)}</Text>
                   </Box>
                 </Box>
               </Box>
@@ -81,9 +131,9 @@ export function CheckoutPreviewCard({
 
             <Divider />
 
-            <Heading size="small">2. Gift-wrap option selection</Heading>
+            <Heading size="small"><FormattedMessage id="app.preview.step2Heading" defaultMessage="2. Gift-wrap option selection" /></Heading>
             {enabledOptions.length === 0 ? (
-              <Text size="small" secondary>Add a gift-wrap option above to preview checkout fees.</Text>
+              <Text size="small" secondary><FormattedMessage id="app.preview.noOptionsHint" defaultMessage="Add a gift-wrap option above to preview checkout fees." /></Text>
             ) : (
               <Box gap="8px" flexWrap="wrap">
                 {enabledOptions.map(option => (
@@ -93,7 +143,7 @@ export function CheckoutPreviewCard({
                     priority={selectedOptionId === option.id ? 'primary' : 'secondary'}
                     onClick={() => onSelectOption(option.id)}
                   >
-                    {option.name} (${option.price.toFixed(2)})
+                    {intl.formatMessage({ id: 'app.preview.optionButtonLabel', defaultMessage: '{name} ({price})' }, { name: option.name, price: formatCurrency(option.price) })}
                   </Button>
                 ))}
               </Box>
@@ -101,33 +151,35 @@ export function CheckoutPreviewCard({
 
             <Divider />
 
-            <Heading size="small">3. Personalized greeting message</Heading>
+            <Heading size="small"><FormattedMessage id="app.preview.step3Heading" defaultMessage="3. Personalized greeting message" /></Heading>
             {!isPaid ? (
-              <SectionHelper skin="premium" title="Greeting cards are a Pro feature">
-                Upgrade to Pro to let shoppers add a personalized greeting card at checkout.
+              <SectionHelper skin="premium" title={<FormattedMessage id="app.preview.proFeatureTitle" defaultMessage="Greeting cards are a Pro feature" />}>
+                <FormattedMessage id="app.preview.proFeatureBody" defaultMessage="Upgrade to Pro to let shoppers add a personalized greeting card at checkout." />
               </SectionHelper>
             ) : (
               <>
                 <Box verticalAlign="middle" gap="12px">
                   <ToggleSwitch checked={includeGreetingCard} onChange={onToggleGreetingCard} />
-                  <Text weight="bold">Include printed greeting card</Text>
+                  <Text weight="bold"><FormattedMessage id="app.preview.includeCardLabel" defaultMessage="Include printed greeting card" /></Text>
                 </Box>
 
                 {includeGreetingCard && (
                   <Box direction="vertical" gap="8px">
-                    <FormField label={`Greeting card message (max ${currentOption?.characterLimit || 200} characters)`}>
+                    <FormField label={intl.formatMessage({ id: 'app.preview.messageFieldLabel', defaultMessage: 'Greeting card message (max {limit} characters)' }, { limit: currentOption?.characterLimit || 200 })}>
                       <Input
                         value={greetingMessage}
                         onChange={(e: any) => onGreetingMessageChange(e.target.value)}
-                        placeholder="Write your personal gift message here..."
+                        placeholder={intl.formatMessage({ id: 'app.preview.messagePlaceholder', defaultMessage: 'Write your personal gift message here...' })}
                       />
                     </FormField>
                     <Box align="space-between" verticalAlign="middle">
                       <Text size="tiny" secondary>
-                        Characters: {charValidation.currentLength} / {charValidation.limit}
+                        <FormattedMessage id="app.preview.charactersCount" defaultMessage="Characters: {current} / {limit}" values={{ current: charValidation.currentLength, limit: charValidation.limit }} />
                       </Text>
                       <Badge skin={charValidation.valid ? 'success' : 'danger'}>
-                        {charValidation.valid ? 'Within limit' : 'Exceeds limit'}
+                        {charValidation.valid
+                          ? <FormattedMessage id="app.preview.withinLimit" defaultMessage="Within limit" />
+                          : <FormattedMessage id="app.preview.exceedsLimit" defaultMessage="Exceeds limit" />}
                       </Badge>
                     </Box>
                   </Box>
@@ -137,12 +189,12 @@ export function CheckoutPreviewCard({
           </Box>
 
           <Box direction="vertical" gap="14px" width="40%" backgroundColor="D70" padding="20px" borderRadius="8px">
-            <Heading size="small">Checkout order summary preview</Heading>
+            <Heading size="small"><FormattedMessage id="app.preview.summaryHeading" defaultMessage="Checkout order summary preview" /></Heading>
             <Divider />
 
             <Box align="space-between">
-              <Text>Cart subtotal:</Text>
-              <Text weight="bold">${simSubtotal.toFixed(2)}</Text>
+              <Text><FormattedMessage id="app.preview.cartSubtotal" defaultMessage="Cart subtotal:" /></Text>
+              <Text weight="bold">{formatCurrency(simSubtotal)}</Text>
             </Box>
 
             {currentOption?.freeThreshold && (
@@ -151,13 +203,13 @@ export function CheckoutPreviewCard({
                 size="small"
               >
                 {simSubtotal >= currentOption.freeThreshold
-                  ? 'Free gift wrapping unlocked!'
-                  : `Add $${(currentOption.freeThreshold - simSubtotal).toFixed(2)} more for free wrapping`}
+                  ? <FormattedMessage id="app.preview.freeWrapUnlocked" defaultMessage="Free gift wrapping unlocked!" />
+                  : <FormattedMessage id="app.preview.addMoreForFree" defaultMessage="Add {amount} more for free wrapping" values={{ amount: formatCurrency(currentOption.freeThreshold - simSubtotal) }} />}
               </SectionHelper>
             )}
 
             {simResult.isGiftWithPurchaseUnlocked && simResult.giftWithPurchaseItem && (
-              <SectionHelper skin="warning" size="small" title="Qualified for free gift">
+              <SectionHelper skin="warning" size="small" title={<FormattedMessage id="app.preview.qualifiedGift" defaultMessage="Qualified for free gift" />}>
                 {simResult.giftWithPurchaseItem}
               </SectionHelper>
             )}
@@ -165,17 +217,21 @@ export function CheckoutPreviewCard({
             <Divider />
 
             <Box align="space-between">
-              <Text>Gift wrapping{currentOption ? ` (${currentOption.name})` : ''}:</Text>
+              <Text>
+                {currentOption
+                  ? <FormattedMessage id="app.preview.giftWrappingLabelNamed" defaultMessage="Gift wrapping ({name}):" values={{ name: currentOption.name }} />
+                  : <FormattedMessage id="app.preview.giftWrappingLabelPlain" defaultMessage="Gift wrapping:" />}
+              </Text>
               <Text weight="bold" skin={simResult.wrapFee === 0 ? 'success' : 'standard'}>
-                {simResult.wrapFee === 0 ? 'Free' : `$${simResult.wrapFee.toFixed(2)}`}
+                {simResult.wrapFee === 0 ? <FormattedMessage id="app.preview.free" defaultMessage="Free" /> : formatCurrency(simResult.wrapFee)}
               </Text>
             </Box>
 
             {includeGreetingCard && isPaid && (
               <Box align="space-between">
-                <Text>Personalized greeting card:</Text>
+                <Text><FormattedMessage id="app.preview.greetingCardLabel" defaultMessage="Personalized greeting card:" /></Text>
                 <Text weight="bold" skin={simResult.cardFee === 0 ? 'success' : 'standard'}>
-                  {simResult.cardFee === 0 ? 'Free' : `$${simResult.cardFee.toFixed(2)}`}
+                  {simResult.cardFee === 0 ? <FormattedMessage id="app.preview.free" defaultMessage="Free" /> : formatCurrency(simResult.cardFee)}
                 </Text>
               </Box>
             )}
@@ -183,21 +239,21 @@ export function CheckoutPreviewCard({
             <Divider />
 
             <Box align="space-between">
-              <Heading size="small">Total additional fees:</Heading>
+              <Heading size="small"><FormattedMessage id="app.preview.totalFeesLabel" defaultMessage="Total additional fees:" /></Heading>
               <Text weight="bold" size="medium" skin={simResult.totalFee > 0 ? 'error' : 'success'}>
-                ${simResult.totalFee.toFixed(2)}
+                {formatCurrency(simResult.totalFee)}
               </Text>
             </Box>
 
             <Box align="space-between">
-              <Heading size="medium">Estimated checkout total:</Heading>
-              <Heading size="medium">${(simSubtotal + simResult.totalFee).toFixed(2)}</Heading>
+              <Heading size="medium"><FormattedMessage id="app.preview.estimatedTotalLabel" defaultMessage="Estimated checkout total:" /></Heading>
+              <Heading size="medium">{formatCurrency(simSubtotal + simResult.totalFee)}</Heading>
             </Box>
 
             <Box direction="vertical" gap="4px" marginTop="8px">
-              <Text size="tiny" secondary weight="bold">Evaluation details:</Text>
+              <Text size="tiny" secondary weight="bold"><FormattedMessage id="app.preview.evaluationDetailsLabel" defaultMessage="Evaluation details:" /></Text>
               {simResult.appliedDetails.map((detail, idx) => (
-                <Text key={idx} size="tiny" secondary>• {detail}</Text>
+                <Text key={idx} size="tiny" secondary>• {formatEvaluationDetail(intl, detail, formatCurrency)}</Text>
               ))}
             </Box>
           </Box>

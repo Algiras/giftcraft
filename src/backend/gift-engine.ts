@@ -3,6 +3,7 @@ import {
   CheckoutLineItem,
   GiftEvaluationInput,
   GiftEvaluationResult,
+  GiftEvaluationDetail,
   WixAdditionalFee,
 } from '../types';
 import { emitDiagnostic, logger } from '../shared/logger';
@@ -175,7 +176,7 @@ export function validateGreetingMessage(
  */
 export function evaluateGiftOptions(input: GiftEvaluationInput): GiftEvaluationResult {
   const subtotal = calculateSubtotal(input.lineItems);
-  const details: string[] = [];
+  const details: GiftEvaluationDetail[] = [];
   const fees: WixAdditionalFee[] = [];
 
   const activeOptions = (input.options || []).filter(opt => opt.enabled);
@@ -192,7 +193,7 @@ export function evaluateGiftOptions(input: GiftEvaluationInput): GiftEvaluationR
       isFreeCardApplied: false,
       isGiftWithPurchaseUnlocked: false,
       characterLimitValid: true,
-      appliedDetails: ['No gift wrapping option selected or available.'],
+      appliedDetails: [{ code: 'NO_OPTION_SELECTED' }],
       cartSubtotal: subtotal,
     };
   }
@@ -209,7 +210,7 @@ export function evaluateGiftOptions(input: GiftEvaluationInput): GiftEvaluationR
       isFreeCardApplied: false,
       isGiftWithPurchaseUnlocked: false,
       characterLimitValid: true,
-      appliedDetails: ['Selected gift option is disabled or does not exist.'],
+      appliedDetails: [{ code: 'OPTION_UNAVAILABLE' }],
       cartSubtotal: subtotal,
     };
   }
@@ -227,9 +228,9 @@ export function evaluateGiftOptions(input: GiftEvaluationInput): GiftEvaluationR
   if (selected.freeThreshold !== undefined && selected.freeThreshold > 0 && subtotal >= selected.freeThreshold) {
     isFreeWrapApplied = true;
     wrapFee = 0;
-    details.push(`Complimentary Gift Wrapping: Cart subtotal $${subtotal.toFixed(2)} reached free threshold $${selected.freeThreshold.toFixed(2)}`);
+    details.push({ code: 'FREE_WRAP_APPLIED', values: { subtotal, threshold: selected.freeThreshold } });
   } else {
-    details.push(`Gift Wrapping (${selected.name}): $${wrapFee.toFixed(2)}`);
+    details.push({ code: 'WRAP_FEE_APPLIED', values: { name: selected.name, fee: wrapFee } });
   }
 
   // 3. Greeting Card Fee & Complimentary Card Evaluation
@@ -244,15 +245,15 @@ export function evaluateGiftOptions(input: GiftEvaluationInput): GiftEvaluationR
     ) {
       isFreeCardApplied = true;
       cardFee = 0;
-      details.push(`Complimentary Greeting Card: Cart subtotal reached free card threshold $${selected.freeCardThreshold.toFixed(2)}`);
+      details.push({ code: 'FREE_CARD_APPLIED', values: { threshold: selected.freeCardThreshold } });
     } else if (selected.freeCardThreshold !== undefined && subtotal < selected.freeCardThreshold) {
       cardFee = DEFAULT_CARD_FEE;
-      details.push(`Personalized Greeting Card: $${cardFee.toFixed(2)} (Spend $${selected.freeCardThreshold.toFixed(2)} for free card)`);
+      details.push({ code: 'CARD_FEE_APPLIED', values: { fee: cardFee, threshold: selected.freeCardThreshold } });
     } else {
       // If freeCardThreshold is not set, greeting card is complimentary with wrap
       isFreeCardApplied = true;
       cardFee = 0;
-      details.push('Personalized Greeting Card included');
+      details.push({ code: 'CARD_INCLUDED' });
     }
   }
 
@@ -268,7 +269,7 @@ export function evaluateGiftOptions(input: GiftEvaluationInput): GiftEvaluationR
     if (subtotalMet || tagMet) {
       isGiftWithPurchaseUnlocked = true;
       giftWithPurchaseItem = gwp.giftProductName;
-      details.push(`Bonus Gift Unlocked: ${gwp.giftProductName}`);
+      details.push({ code: 'GIFT_WITH_PURCHASE_UNLOCKED', values: { giftName: gwp.giftProductName } });
       logger.trackUsage('GIFT_WITH_PURCHASE_TRIGGERED', {
         giftName: gwp.giftProductName,
         subtotal,

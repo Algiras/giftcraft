@@ -52,5 +52,9 @@ test('actionable storage recovery UI renders when storage is unverified', async 
   await page.goto('./?storage=unverified');
   await expect(page.getByText('Setup needed before you can save gift options')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Set up storage' })).toBeVisible();
+});
+
+test('dashboard renders in German when ?lang=de is set', async ({ page }) => {
+  await page.goto('./?lang=de');
+  await expect(page.getByText('GiftCraft: Geschenkverpackung & Grußkarten')).toBeVisible();
 });

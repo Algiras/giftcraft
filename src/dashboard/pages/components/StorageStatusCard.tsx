@@ -1,27 +1,43 @@
 import React, { useState } from 'react';
 import { Box, Button, Card, SectionHelper, Text, TextButton } from '@wix/design-system';
+import { FormattedMessage, useIntl } from 'react-intl';
 import type { StorageSetupState } from '../../../shared/storage-readiness';
 
 interface StorageStatusCardProps {
   storageReady: boolean;
-  storageError: string | null;
-  storageErrorDetails?: string;
   storageState: StorageSetupState | null;
+  storageErrorDetails?: string;
+  storageRequestId?: string;
   busy: boolean;
   onRetry: () => void;
 }
 
-function recoveryTitle(state: StorageSetupState | null): string {
+function recoveryTitleId(state: StorageSetupState | null): string {
   switch (state) {
     case 'provisioning':
     case 'timeout':
-      return 'Storage is still setting up';
+      return 'app.storage.recoveryTitleProvisioning';
     case 'permission':
-      return 'App permissions needed';
+      return 'app.storage.recoveryTitlePermission';
     case 'cms_required':
-      return 'Wix CMS required on this site';
+      return 'app.storage.recoveryTitleCmsRequired';
     default:
-      return 'Setup needed before you can save gift options';
+      return 'app.storage.recoveryTitleDefault';
+  }
+}
+
+function recoveryBodyId(state: StorageSetupState | null): { id: string; defaultMessage: string } {
+  switch (state) {
+    case 'provisioning':
+    case 'timeout':
+    case 'schema_mismatch':
+      return { id: 'app.storage.provisioningMessage', defaultMessage: 'GiftCraft is still provisioning private storage after install or update. This usually finishes within five minutes — click "Check again" or keep this page open.' };
+    case 'permission':
+      return { id: 'app.storage.permissionMessage', defaultMessage: 'GiftCraft needs storage permissions on this site. Open Manage Apps, choose Complete Setup for this app, approve access, then return here and click Retry.' };
+    case 'cms_required':
+      return { id: 'app.storage.cmsRequiredMessage', defaultMessage: 'Add Wix CMS to this site, update this app to the latest version, then click Retry.' };
+    default:
+      return { id: 'app.storage.genericError', defaultMessage: 'We could not confirm storage is set up. Keep this page open and try again, or contact support if this continues.' };
   }
 }
 
@@ -32,35 +48,45 @@ function recoveryTitle(state: StorageSetupState | null): string {
  */
 export function StorageStatusCard({
   storageReady,
-  storageError,
-  storageErrorDetails,
   storageState,
+  storageErrorDetails,
+  storageRequestId,
   busy,
   onRetry,
 }: StorageStatusCardProps) {
+  const intl = useIntl();
   const [showDetails, setShowDetails] = useState(false);
-  const retryLabel = storageState === 'provisioning' || storageState === 'timeout' ? 'Check again' : 'Retry';
+  const isRecovering = storageState === 'provisioning' || storageState === 'timeout';
+  const showErrorCard = !storageReady && !!storageState && storageState !== 'ready';
+  const bodyMessage = recoveryBodyId(storageState);
+  const detailsForSupport = [storageErrorDetails, storageRequestId ? intl.formatMessage({ id: 'app.storage.requestIdLabel', defaultMessage: 'Wix request ID: {requestId}' }, { requestId: storageRequestId }) : undefined]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <Box direction="vertical" gap="16px">
-      {storageError && (
+      {showErrorCard && (
         <Card>
           <Card.Content>
             <Box direction="vertical" gap="8px">
-              <SectionHelper skin="warning" title={recoveryTitle(storageState)}>
-                {storageError}
+              <SectionHelper skin="warning" title={<FormattedMessage id={recoveryTitleId(storageState)} defaultMessage="Setup needed before you can save gift options" />}>
+                <FormattedMessage id={bodyMessage.id} defaultMessage={bodyMessage.defaultMessage} />
               </SectionHelper>
-              {storageErrorDetails && (
+              {detailsForSupport && (
                 <Box direction="vertical" gap="2px">
                   <TextButton size="tiny" onClick={() => setShowDetails(!showDetails)}>
-                    {showDetails ? 'Hide details for support' : 'Details for support'}
+                    {showDetails
+                      ? <FormattedMessage id="app.storage.hideDetails" defaultMessage="Hide details for support" />
+                      : <FormattedMessage id="app.storage.showDetails" defaultMessage="Details for support" />}
                   </TextButton>
-                  {showDetails && <Text size="tiny" secondary>{storageErrorDetails}</Text>}
+                  {showDetails && <Text size="tiny" secondary>{detailsForSupport}</Text>}
                 </Box>
               )}
               <Box gap="8px">
                 <Button priority="secondary" size="small" disabled={busy} onClick={onRetry}>
-                  {retryLabel}
+                  {isRecovering
+                    ? <FormattedMessage id="app.storage.checkAgain" defaultMessage="Check again" />
+                    : <FormattedMessage id="app.common.retry" defaultMessage="Retry" />}
                 </Button>
               </Box>
             </Box>
@@ -68,10 +94,10 @@ export function StorageStatusCard({
         </Card>
       )}
 
-      {!storageReady && !storageError && busy && (
+      {!storageReady && !showErrorCard && busy && (
         <Card>
           <Card.Content>
-            <Text secondary size="small">Checking whether your storage is set up…</Text>
+            <Text secondary size="small"><FormattedMessage id="app.storage.checkingSetup" defaultMessage="Checking whether your storage is set up…" /></Text>
           </Card.Content>
         </Card>
       )}
