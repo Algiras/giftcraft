@@ -21,7 +21,7 @@
   "app.addModal.wrapStylePlaceholder": "pvz., {styles}",
   "app.common.cancel": "Atšaukti",
   "app.common.delete": "Ištrinti",
-  "app.common.retry": "Bandyti dar kartą",
+  "app.common.retry": "Bandyti vėl",
   "app.common.upgradeToPro": "Naujinti į Pro",
   "app.deleteModal.body": "Tai pašalins dovanų pakavimo parinktį iš jūsų konfigūracijos. Pirkėjai jos daugiau negalės pasirinkti, ir šio veiksmo negalima anuliuoti.",
   "app.deleteModal.title": "Ištrinti „{name}“?",
@@ -136,7 +136,7 @@
   "app.table.title": "Dovanų parinktys",
   "app.wrapStyle.classicRibbon": "Klasikinė juostelė",
   "app.wrapStyle.custom": "Pasirinktinis",
-  "app.wrapStyle.ecoKraft": "Ekologiškas kraftinis popierius",
+  "app.wrapStyle.ecoKraft": "Eko kraftinis popierius",
   "app.wrapStyle.holidayFestive": "Šventinis",
   "app.wrapStyle.luxuryGold": "Prabangus auksinis"
 }

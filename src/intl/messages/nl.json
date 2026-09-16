@@ -12,7 +12,7 @@
   "app.addModal.nameLabel": "Naam van de optie",
   "app.addModal.namePlaceholder": "bijv. Classic Crimson Ribbon",
   "app.addModal.proOnlyBody": "Drempels voor gratis inpakken, wenskaarten en regels voor cadeau bij aankoop maken deel uit van het Pro-abonnement. Upgrade om deze voor deze optie te configureren.",
-  "app.addModal.proOnlyTitle": "Alleen voor Pro beschikbare instellingen",
+  "app.addModal.proOnlyTitle": "Instellingen alleen voor Pro",
   "app.addModal.saveButton": "Cadeau-optie opslaan",
   "app.addModal.title": "Een cadeauverpakkingsoptie toevoegen",
   "app.addModal.wrapFeeInfo": "Wordt in rekening gebracht wanneer de koper deze inpakoptie selecteert.",
@@ -137,6 +137,6 @@
   "app.wrapStyle.classicRibbon": "Klassiek lint",
   "app.wrapStyle.custom": "Aangepast",
   "app.wrapStyle.ecoKraft": "Eco-kraftpapier",
-  "app.wrapStyle.holidayFestive": "Feestelijk seizoensgebonden",
+  "app.wrapStyle.holidayFestive": "Feestelijk",
   "app.wrapStyle.luxuryGold": "Luxe goud"
 }

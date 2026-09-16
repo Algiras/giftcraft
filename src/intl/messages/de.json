@@ -12,7 +12,7 @@
   "app.addModal.nameLabel": "Name der Option",
   "app.addModal.namePlaceholder": "z. B. Classic Crimson Ribbon",
   "app.addModal.proOnlyBody": "Kostenlose Verpackungsschwellen, Grußkarten und Geschenk-bei-Kauf-Regeln sind Teil des Pro-Plans. Upgraden Sie, um sie für diese Option zu konfigurieren.",
-  "app.addModal.proOnlyTitle": "Nur für Pro verfügbare Einstellungen",
+  "app.addModal.proOnlyTitle": "Einstellungen nur mit Pro",
   "app.addModal.saveButton": "Geschenkoption speichern",
   "app.addModal.title": "Geschenkverpackungsoption hinzufügen",
   "app.addModal.wrapFeeInfo": "Wird berechnet, wenn der Käufer diese Verpackungsoption auswählt.",
@@ -21,7 +21,7 @@
   "app.addModal.wrapStylePlaceholder": "z. B. {styles}",
   "app.common.cancel": "Abbrechen",
   "app.common.delete": "Löschen",
-  "app.common.retry": "Erneut versuchen",
+  "app.common.retry": "Wiederholen",
   "app.common.upgradeToPro": "Auf Pro upgraden",
   "app.deleteModal.body": "Dies entfernt die Geschenkverpackungsoption aus Ihrer Konfiguration. Käufer können sie nicht mehr auswählen, und dies kann nicht rückgängig gemacht werden.",
   "app.deleteModal.title": "„{name}\" löschen?",
@@ -135,8 +135,8 @@
   "app.table.subtitle": "Optionsnamen müssen mit dem nativen Shop-Modifikator übereinstimmen, den der Käufer beim Checkout auswählt.",
   "app.table.title": "Geschenkoptionen",
   "app.wrapStyle.classicRibbon": "Klassische Schleife",
-  "app.wrapStyle.custom": "Benutzerdefiniert",
+  "app.wrapStyle.custom": "Individuell",
   "app.wrapStyle.ecoKraft": "Öko-Kraftpapier",
-  "app.wrapStyle.holidayFestive": "Feiertagsfestlich",
+  "app.wrapStyle.holidayFestive": "Festlich",
   "app.wrapStyle.luxuryGold": "Luxus Gold"
 }
