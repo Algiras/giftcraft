@@ -9,6 +9,15 @@ function wixServiceMocks(): Plugin {
   };
 
   const mocks: Record<string, string> = {
+    'business-tools': `
+      export const siteProperties = {
+        getSiteProperties: () => Promise.resolve({
+          properties: {
+            paymentCurrency: new URLSearchParams(window.location.search).get('currency') || 'USD',
+          },
+        }),
+      };
+    `,
     'app-management': `
       export const billing = {};
       export const biEvents = { sendBiEvent: () => Promise.resolve() };
@@ -115,6 +124,7 @@ function wixServiceMocks(): Plugin {
     enforce: 'pre',
     resolveId(source, importer) {
       if (source === '@wix/app-management') return virtual('app-management');
+      if (source === '@wix/business-tools') return virtual('business-tools');
       if (source === '@wix/essentials') return virtual('essentials');
       if (!importer?.endsWith('/src/dashboard/pages/page.tsx')) return null;
       const mock = pageImports[source];

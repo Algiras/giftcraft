@@ -59,6 +59,8 @@ interface CheckoutPreviewCardProps {
   onGreetingMessageChange: (value: string) => void;
   currentOption: GiftOption | undefined;
   charValidation: { valid: boolean; currentLength: number; limit: number };
+  /** Site billing currency (Business Info paymentCurrency) for amount formatting. */
+  currency: string;
   simSubtotal: number;
   simResult: GiftEvaluationResult;
 }
@@ -77,11 +79,12 @@ export function CheckoutPreviewCard({
   onGreetingMessageChange,
   currentOption,
   charValidation,
+  currency,
   simSubtotal,
   simResult,
 }: CheckoutPreviewCardProps) {
   const intl = useIntl();
-  const formatCurrency = (value: number) => intl.formatNumber(value, { style: 'currency', currency: 'USD' });
+  const formatCurrency = (value: number) => intl.formatNumber(value, { style: 'currency', currency });
 
   return (
     <Card>

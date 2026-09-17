@@ -18,6 +18,7 @@ import { AddGiftOptionModal } from './components/AddGiftOptionModal';
 import { DeleteConfirmModal } from './components/DeleteConfirmModal';
 import { CheckoutPreviewCard } from './components/CheckoutPreviewCard';
 import { resolveEcommerceInstalled, WIX_STORES_APP_MARKET_URL, type EcommerceInstallState } from '../../shared/ecommerce';
+import { loadStoreCurrency } from '../../shared/store-currency';
 export const APP_ID = '0ed8d640-b905-4fb7-b40b-379652fd6d07';
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -120,6 +121,7 @@ const INITIAL_OPTIONS: GiftOption[] = [{
 export function GiftCraftDashboard() {
   const intl = useIntl();
   const [options, setOptions] = useState<GiftOption[]>([]);
+  const [currency, setCurrency] = useState('USD');
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [storageReady, setStorageReady] = useState(false);
   const [storageState, setStorageState] = useState<StorageSetupState | null>(null);
@@ -208,6 +210,7 @@ export function GiftCraftDashboard() {
     markDashboardLoaded();
     void checkStorage(false);
     void refreshEntitlement();
+    void loadStoreCurrency().then(setCurrency);
 
     // A4: recognize an upgrade as soon as the merchant returns from the Wix pricing page,
     // without requiring a reinstall.
@@ -391,9 +394,9 @@ export function GiftCraftDashboard() {
               </Box>
             </Box>
 
-            <GiftOptionsTable options={options} isPaid={isPaid} busy={busy} onToggleOption={toggleOptionActive} onRequestDelete={requestDeleteOption} />
+            <GiftOptionsTable options={options} isPaid={isPaid} busy={busy} currency={currency} onToggleOption={toggleOptionActive} onRequestDelete={requestDeleteOption} />
 
-            <CheckoutPreviewCard isPaid={isPaid} simItems={simItems} onUpdateQuantity={updateSimQuantity} onAddItem={addSimItem} enabledOptions={enabledOptions} selectedOptionId={selectedOptionId} onSelectOption={setSelectedOptionId} includeGreetingCard={includeGreetingCard} onToggleGreetingCard={() => setIncludeGreetingCard(!includeGreetingCard)} greetingMessage={greetingMessage} onGreetingMessageChange={setGreetingMessage} currentOption={currentOption} charValidation={charValidation} simSubtotal={simSubtotal} simResult={simResult} />
+            <CheckoutPreviewCard isPaid={isPaid} simItems={simItems} onUpdateQuantity={updateSimQuantity} onAddItem={addSimItem} enabledOptions={enabledOptions} selectedOptionId={selectedOptionId} onSelectOption={setSelectedOptionId} includeGreetingCard={includeGreetingCard} onToggleGreetingCard={() => setIncludeGreetingCard(!includeGreetingCard)} greetingMessage={greetingMessage} onGreetingMessageChange={setGreetingMessage} currentOption={currentOption} charValidation={charValidation} currency={currency} simSubtotal={simSubtotal} simResult={simResult} />
           </Box>}
       </Page.Content>
     </Page>

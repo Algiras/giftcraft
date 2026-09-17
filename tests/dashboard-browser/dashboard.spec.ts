@@ -123,6 +123,14 @@ test.describe('GiftCraft dashboard', () => {
     await expect(page.getByText('GiftCraft: Geschenkverpackung & Grußkarten')).toBeVisible();
   });
 
+  test('amounts render in the site payment currency, not hardcoded USD', async ({ page }) => {
+    await page.goto('./?currency=EUR');
+    // Seeded options price at 4.99 and 9.99; the site currency must win over the USD fallback.
+    await expect(page.getByText('€4.99').first()).toBeVisible();
+    await expect(page.getByText('€9.99').first()).toBeVisible();
+    await expect(page.getByText('$4.99')).toHaveCount(0);
+  });
+
   test('main dashboard screenshot for the record', async ({ page }) => {
     await expect(page.getByText('GiftCraft: Gift Wrapping & Greeting Cards')).toBeVisible();
     await expect(page.getByText('Luxury Velvet & Gold Embossed', { exact: true }).first()).toBeVisible();

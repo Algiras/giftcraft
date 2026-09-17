@@ -8,6 +8,8 @@ interface GiftOptionsTableProps {
   options: GiftOption[];
   isPaid: boolean;
   busy: boolean;
+  /** Site billing currency (Business Info paymentCurrency) for amount columns. */
+  currency: string;
   onToggleOption: (id: string) => void;
   onRequestDelete: (option: GiftOption) => void;
 }
@@ -27,13 +29,13 @@ function wrapStyleLabel(intl: ReturnType<typeof useIntl>, wrapStyle: string): st
   return intl.formatMessage({ id, defaultMessage: wrapStyle.replace(/_/g, ' ') });
 }
 
-export function GiftOptionsTable({ options, isPaid, busy, onToggleOption, onRequestDelete }: GiftOptionsTableProps) {
+export function GiftOptionsTable({ options, isPaid, busy, currency, onToggleOption, onRequestDelete }: GiftOptionsTableProps) {
   const intl = useIntl();
   const [searchQuery, setSearchQuery] = useState('');
   const enabledCount = options.filter(option => option.enabled).length;
   const limitTooltipText = intl.formatMessage({ id: 'app.page.basicPlanLimitToast', defaultMessage: 'The Basic plan includes one active gift-wrap option. Upgrade to Pro to run more at once.' });
 
-  const formatCurrency = (value: number) => intl.formatNumber(value, { style: 'currency', currency: 'USD' });
+  const formatCurrency = (value: number) => intl.formatNumber(value, { style: 'currency', currency });
 
   const filteredOptions = options.filter(
     option =>
