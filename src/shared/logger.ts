@@ -1,11 +1,23 @@
-import { biEvents } from '@wix/app-management';
+import { AppLogger, createDiagnostics } from '@wix-extensions/core/telemetry';
+
+export { AppLogger, isSetupFinished, resetSetupStateForTesting, markSetupFinished } from '@wix-extensions/core/telemetry';
+export type { LogPayload } from '@wix-extensions/core/telemetry';
 
 /**
  * Zero-Infra Telemetry & Structured Logger for GiftCraft.
  * Wix Developer Center native monitoring with zero external servers.
  *
- * Wix BI confirms event submission only. It is not a retrievable support-log
- * store; release acceptance must verify any destination and retention policy.
+ * The AppLogger class, isSetupFinished/resetSetupStateForTesting,
+ * markSetupFinished and markDashboardLoaded are @wix-extensions/core/telemetry
+ * re-exports (identical behavior). emitDiagnostic now delegates to core's
+ * `createDiagnostics` too: core emits the same snake_case wire schema
+ * (app_version/schema_version/duration_ms/...) GiftCraft always used, and its
+ * `DiagnosticSurface` union is now open (`string & {}`), so the local 'fee_rules'
+ * surface value that used to be rejected by core's closed union now typechecks
+ * and survives into the payload unchanged. The GiftCraft-specific
+ * DiagnosticEventName/DiagnosticInput types stay local purely for narrower
+ * autocomplete at call sites; they are structurally assignable to core's (open)
+ * equivalents.
  */
 export type DiagnosticEventName =
   | 'storage_metadata_read'
@@ -35,133 +47,28 @@ export type DiagnosticInput = {
   mode?: 'sample' | 'real';
 };
 
+const APP_NAME = 'giftcraft';
 const APP_VERSION = '1.0.0';
-const SAFE_ERROR_CODE = /^[A-Z][A-Z0-9_]{1,63}$/;
-const SAFE_REQUEST_ID = /^[A-Za-z0-9._:-]{1,128}$/;
 
-function addIfDefined(eventData: Record<string, string>, key: string, value: string | undefined): void {
-  if (value) eventData[key] = value;
-}
-
-function sendBiEventBestEffort(send: () => Promise<void>): void {
-  try {
-    void send().catch(() => undefined);
-  } catch {
-    // Diagnostics must not break the merchant operation if the SDK cannot initialize.
-  }
-}
+const diagnostics = createDiagnostics({ appName: APP_NAME, appVersion: APP_VERSION, schemaVersion: '1' });
 
 /**
- * Best-effort, client-side Wix BI ingress with a closed schema. Deliberately
- * do not await it: diagnostics must never block the primary app operation.
+ * Best-effort, client-side Wix BI ingress. Deliberately not awaited by callers:
+ * diagnostics must never block the primary app operation (core's implementation
+ * swallows send failures the same way GiftCraft's local version used to).
  */
 export function emitDiagnostic(eventName: DiagnosticEventName, input: DiagnosticInput): void {
-  const eventData: Record<string, string> = {
-    app_version: APP_VERSION,
-    schema_version: '1',
-    timestamp: new Date().toISOString(),
-    outcome: input.outcome,
-    surface: input.surface ?? 'dashboard',
-  };
-  if (Number.isFinite(input.durationMs) && input.durationMs! >= 0) {
-    eventData.duration_ms = String(Math.round(input.durationMs!));
-  }
-  addIfDefined(eventData, 'error_code', input.errorCode && SAFE_ERROR_CODE.test(input.errorCode) ? input.errorCode : undefined);
-  addIfDefined(eventData, 'wix_request_id', input.wixRequestId && SAFE_REQUEST_ID.test(input.wixRequestId) ? input.wixRequestId : undefined);
-  addIfDefined(eventData, 'mode', input.mode);
-
-  sendBiEventBestEffort(() => biEvents.sendBiEvent({
-    eventName: 'CUSTOM',
-    customEventName: `giftcraft_${eventName}`,
-    eventData,
-  }));
-}
-
-/** Call only when the caller has established required first-run setup is complete. */
-export function markSetupFinished(): void {
-  sendBiEventBestEffort(() => biEvents.sendBiEvent({ eventName: 'APP_SETUP_FINISHED' }));
+  diagnostics.emitDiagnostic(eventName, input);
 }
 
 /** Call once when the app's dashboard page mounts; measures install -> visit adoption. */
-export function markDashboardLoaded(): void {
-  sendBiEventBestEffort(() => biEvents.sendBiEvent({ eventName: 'APP_DASHBOARD_LOADED' }));
-}
+export const markDashboardLoaded = diagnostics.markDashboardLoaded;
 
-export interface LogPayload {
-  app: string;
-  version?: string;
-  action: string;
-  durationMs?: number;
-  data?: Record<string, any>;
-  error?: {
-    message: string;
-    stack?: string;
-    name?: string;
-  };
-}
-
-export class AppLogger {
-  private appName: string;
-  private version: string;
-
-  constructor(appName: string, version: string = '1.0.0') {
-    this.appName = appName;
-    this.version = version;
-  }
-
-  async time<T>(action: string, fn: () => Promise<T> | T, context?: Record<string, any>): Promise<T> {
-    const start = Date.now();
-    try {
-      const result = await fn();
-      const durationMs = Date.now() - start;
-      this.info(action, { durationMs, data: context });
-      return result;
-    } catch (err: any) {
-      const durationMs = Date.now() - start;
-      this.error(action, err, { durationMs, data: context });
-      throw err;
-    }
-  }
-
-  info(action: string, meta?: Partial<LogPayload>): void {
-    const payload: LogPayload = {
-      app: this.appName,
-      version: this.version,
-      action,
-      ...meta,
-    };
-    console.info(`[TELEMETRY:INFO] ${JSON.stringify(payload)}`);
-  }
-
-  warn(action: string, meta?: Partial<LogPayload>): void {
-    const payload: LogPayload = {
-      app: this.appName,
-      version: this.version,
-      action,
-      ...meta,
-    };
-    console.warn(`[TELEMETRY:WARN] ${JSON.stringify(payload)}`);
-  }
-
-  error(action: string, error: any, meta?: Partial<LogPayload>): void {
-    const payload: LogPayload = {
-      app: this.appName,
-      version: this.version,
-      action,
-      ...meta,
-      error: {
-        name: error?.name || 'Error',
-        message: error?.message || String(error),
-        stack: error?.stack,
-      },
-    };
-    console.error(`[TELEMETRY:ERROR] ${JSON.stringify(payload)}`);
-  }
-
+class GiftCraftLogger extends AppLogger {
   trackUsage(event: string, metrics: Record<string, number | string | boolean>): void {
     const payload = {
-      app: this.appName,
-      version: this.version,
+      app: APP_NAME,
+      version: APP_VERSION,
       event: `USAGE_${event.toUpperCase()}`,
       timestamp: new Date().toISOString(),
       metrics,
@@ -170,4 +77,4 @@ export class AppLogger {
   }
 }
 
-export const logger = new AppLogger('giftcraft', '1.0.0');
+export const logger = new GiftCraftLogger(APP_NAME, APP_VERSION);

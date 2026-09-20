@@ -113,6 +113,7 @@
   "app.storage.recoveryTitlePermission": "App-machtigingen nodig",
   "app.storage.recoveryTitleProvisioning": "Opslag wordt nog ingesteld",
   "app.storage.requestIdLabel": "Wix-aanvraag-ID: {requestId}",
+  "app.storage.requestIdPrefix": "Wix-aanvraag-ID:",
   "app.storage.showDetails": "Details voor support tonen",
   "app.table.addedOn": "Toegevoegd op {date}",
   "app.table.addedRecently": "Recent toegevoegd",

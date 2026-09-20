@@ -79,11 +79,11 @@ it('verifies the collection is queryable when properly provisioned', async () =>
   expect(items.query).toHaveBeenCalledWith(COLLECTION_ID);
 });
 
-it('reports provisioning failures on forbidden metadata access', async () => {
+it('reports permission_denied (not provisioning) on forbidden metadata access', async () => {
   vi.mocked(collections.getDataCollection).mockRejectedValueOnce(new Error('403 Forbidden'));
   const readiness = await assessConfigurationStorage();
   expect(readiness.ready).toBe(false);
-  expect(readiness.state).toBe('provisioning');
+  expect(readiness.state).toBe('permission_denied');
 });
 
 it('rejects an existing collection with incompatible schema', async () => {

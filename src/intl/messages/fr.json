@@ -113,6 +113,7 @@
   "app.storage.recoveryTitlePermission": "Autorisations de l'application requises",
   "app.storage.recoveryTitleProvisioning": "Le stockage est encore en cours de configuration",
   "app.storage.requestIdLabel": "ID de requête Wix : {requestId}",
+  "app.storage.requestIdPrefix": "ID de requête Wix :",
   "app.storage.showDetails": "Afficher les détails pour le support",
   "app.table.addedOn": "Ajoutée le {date}",
   "app.table.addedRecently": "Ajoutée récemment",

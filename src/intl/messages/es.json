@@ -113,6 +113,7 @@
   "app.storage.recoveryTitlePermission": "Se necesitan permisos de la aplicación",
   "app.storage.recoveryTitleProvisioning": "El almacenamiento todavía se está configurando",
   "app.storage.requestIdLabel": "ID de solicitud de Wix: {requestId}",
+  "app.storage.requestIdPrefix": "ID de solicitud de Wix:",
   "app.storage.showDetails": "Mostrar detalles para soporte",
   "app.table.addedOn": "Añadido el {date}",
   "app.table.addedRecently": "Añadido recientemente",

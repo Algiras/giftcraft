@@ -113,6 +113,7 @@
   "app.storage.recoveryTitlePermission": "Autorizzazioni dell'app necessarie",
   "app.storage.recoveryTitleProvisioning": "L'archiviazione è ancora in fase di configurazione",
   "app.storage.requestIdLabel": "ID richiesta Wix: {requestId}",
+  "app.storage.requestIdPrefix": "ID richiesta Wix:",
   "app.storage.showDetails": "Mostra dettagli per l'assistenza",
   "app.table.addedOn": "Aggiunta il {date}",
   "app.table.addedRecently": "Aggiunta di recente",

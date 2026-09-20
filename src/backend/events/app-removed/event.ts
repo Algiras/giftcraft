@@ -1,12 +1,4 @@
 import { appInstances } from '@wix/app-management';
-import { emitDiagnostic } from '../../../shared/logger';
+import { createLifecycleEventHandlers } from '@wix-extensions/core/telemetry';
 
-/**
- * Uninstall lifecycle telemetry: records churn; no merchant data is stored.
- */
-export default appInstances.onAppInstanceRemoved(async (_event) => {
-  emitDiagnostic('app_removed', {
-    outcome: 'success',
-    surface: 'backend_event',
-  });
-});
+export default appInstances.onAppInstanceRemoved(createLifecycleEventHandlers('giftcraft').onAppRemoved);

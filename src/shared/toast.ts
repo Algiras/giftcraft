@@ -1,16 +1,13 @@
-import { dashboard } from '@wix/dashboard';
+import { showAppToast as coreShowToast } from '@wix-extensions/core/toast';
 
 export type ToastType = 'success' | 'error';
 
 /**
- * Thin wrapper around dashboard.showToast that never throws: the dashboard host
- * SDK is only available when the page is actually embedded in the Wix dashboard,
- * so unit tests and the standalone browser harness keep working when it is not.
+ * Thin wrapper around core's showAppToast, preserving GiftCraft's narrower
+ * ToastType signature ('success' | 'error' only, no 'warning' / 'standard').
+ * core's showAppToast already swallows errors when not running inside the
+ * Wix dashboard host (unit tests / browser harness).
  */
 export function showAppToast(message: string, type: ToastType = 'success'): void {
-  try {
-    dashboard.showToast({ message, type });
-  } catch {
-    // Not running inside the Wix dashboard host (unit tests / browser harness) - ignore.
-  }
+  coreShowToast(message, type);
 }

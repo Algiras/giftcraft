@@ -1,13 +1,4 @@
 import { appInstances } from '@wix/app-management';
-import { emitDiagnostic } from '../../../shared/logger';
+import { createLifecycleEventHandlers } from '@wix-extensions/core/telemetry';
 
-/**
- * Install lifecycle telemetry: records when a site adds the app so adoption
- * funnels (install -> dashboard visit -> setup finished) can be measured.
- */
-export default appInstances.onAppInstanceInstalled(async (_event) => {
-  emitDiagnostic('app_installed', {
-    outcome: 'success',
-    surface: 'backend_event',
-  });
-});
+export default appInstances.onAppInstanceInstalled(createLifecycleEventHandlers('giftcraft').onAppInstalled);

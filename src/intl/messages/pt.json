@@ -113,6 +113,7 @@
   "app.storage.recoveryTitlePermission": "São necessárias permissões da aplicação",
   "app.storage.recoveryTitleProvisioning": "O armazenamento ainda está a ser configurado",
   "app.storage.requestIdLabel": "ID de pedido Wix: {requestId}",
+  "app.storage.requestIdPrefix": "ID de pedido Wix:",
   "app.storage.showDetails": "Mostrar detalhes para o suporte",
   "app.table.addedOn": "Adicionada em {date}",
   "app.table.addedRecently": "Adicionada recentemente",

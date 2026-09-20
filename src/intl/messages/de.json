@@ -113,6 +113,7 @@
   "app.storage.recoveryTitlePermission": "App-Berechtigungen erforderlich",
   "app.storage.recoveryTitleProvisioning": "Speicher wird noch eingerichtet",
   "app.storage.requestIdLabel": "Wix-Anfrage-ID: {requestId}",
+  "app.storage.requestIdPrefix": "Wix-Anfrage-ID:",
   "app.storage.showDetails": "Details für den Support anzeigen",
   "app.table.addedOn": "Hinzugefügt am {date}",
   "app.table.addedRecently": "Vor Kurzem hinzugefügt",

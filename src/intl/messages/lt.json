@@ -113,6 +113,7 @@
   "app.storage.recoveryTitlePermission": "Reikalingi programos leidimai",
   "app.storage.recoveryTitleProvisioning": "Saugykla dar konfigūruojama",
   "app.storage.requestIdLabel": "Wix užklausos ID: {requestId}",
+  "app.storage.requestIdPrefix": "Wix užklausos ID:",
   "app.storage.showDetails": "Rodyti informaciją palaikymo komandai",
   "app.table.addedOn": "Pridėta {date}",
   "app.table.addedRecently": "Pridėta nesenai",

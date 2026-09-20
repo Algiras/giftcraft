@@ -113,6 +113,7 @@
   "app.storage.recoveryTitlePermission": "Wymagane uprawnienia aplikacji",
   "app.storage.recoveryTitleProvisioning": "Pamięć jest jeszcze konfigurowana",
   "app.storage.requestIdLabel": "ID żądania Wix: {requestId}",
+  "app.storage.requestIdPrefix": "ID żądania Wix:",
   "app.storage.showDetails": "Pokaż szczegóły dla pomocy technicznej",
   "app.table.addedOn": "Dodano {date}",
   "app.table.addedRecently": "Dodano niedawno",
