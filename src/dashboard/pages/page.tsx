@@ -1,7 +1,7 @@
 import { withIntlProvider } from '../../intl/withIntlProvider';
 import { FormattedMessage, useIntl } from 'react-intl';
 import React, { useState, useEffect, useCallback, Component, type ReactNode, type ErrorInfo } from 'react';
-import { WixDesignSystemProvider, Page, Box, Card, Heading, Text, Loader, Button, EmptyState } from '@wix/design-system';
+import { WixDesignSystemProvider, Page, Box, Card, Heading, Text, Loader, Button, EmptyState, Badge, StatisticsWidget } from '@wix/design-system';
 import '@wix/design-system/styles.global.css';
 import { appInstances } from '@wix/app-management';
 import { assessConfigurationStorage, loadConfiguration, saveConfiguration } from '../../shared/configuration';
@@ -17,7 +17,7 @@ import { GiftOptionsTable } from './components/GiftOptionsTable';
 import { AddGiftOptionModal } from './components/AddGiftOptionModal';
 import { DeleteConfirmModal } from './components/DeleteConfirmModal';
 import { CheckoutPreviewCard } from './components/CheckoutPreviewCard';
-import { resolveEcommerceInstalled, WIX_STORES_APP_MARKET_URL, type EcommerceInstallState } from '../../shared/ecommerce';
+import { resolveEcommerceInstalled, WIX_ECOMMERCE_APP_MARKET_URL, type EcommerceInstallState } from '../../shared/ecommerce';
 import { loadStoreCurrency } from '../../shared/store-currency';
 export const APP_ID = '0ed8d640-b905-4fb7-b40b-379652fd6d07';
 interface ErrorBoundaryProps {
@@ -339,7 +339,12 @@ export function GiftCraftDashboard() {
   }, [enabledOptions.map(o => o.id).join(',')]);
   return <>
     <Page height="100vh">
-      <Page.Header title={intl.formatMessage({ id: 'app.page.title', defaultMessage: 'GiftCraft: Gift Wrapping & Greeting Cards' })} subtitle={intl.formatMessage({ id: 'app.page.subtitle', defaultMessage: 'Configure gift-wrap fees, an optional greeting card, and preview how they apply at checkout.' })} actionsBar={<Box gap="12px">
+      <Page.Header title={<Box gap="8px" verticalAlign="middle">
+            <span>{intl.formatMessage({ id: 'app.page.title', defaultMessage: 'GiftCraft: Gift Wrapping & Greeting Cards' })}</span>
+            {isPaid && <Badge skin="success" size="small">
+                <FormattedMessage id="app.page.proPlanBadge" defaultMessage="Pro plan" />
+              </Badge>}
+          </Box>} subtitle={intl.formatMessage({ id: 'app.page.subtitle', defaultMessage: 'Configure gift-wrap fees, an optional greeting card, and preview how they apply at checkout.' })} actionsBar={<Box gap="12px">
             <Button priority="secondary" disabled={!storageReady || busy} onClick={() => setIsAddModalOpen(true)}>
               <FormattedMessage id="app.page.addGiftOption" defaultMessage="+ Add gift option" />
             </Button>
@@ -355,46 +360,34 @@ export function GiftCraftDashboard() {
                 <Loader text={intl.formatMessage({ id: 'app.page.loadingConfiguration', defaultMessage: 'Loading your GiftCraft configuration...' })} />
               </Box>
             </Card.Content>
-          </Card> : ecommerceInstalled === false ? <EmptyState theme="page" title={intl.formatMessage({ id: 'app.page.emptyStateTitle', defaultMessage: 'Add Wix Stores to use GiftCraft' })} subtitle={intl.formatMessage({ id: 'app.page.emptyStateSubtitle', defaultMessage: 'GiftCraft charges gift-wrap and greeting-card fees at checkout. Add Wix Stores (or another Wix eCommerce app) to this site, then return here to configure your options.' })}>
-            <Button as="a" href={WIX_STORES_APP_MARKET_URL} target="_blank" rel="noopener noreferrer">
-              <FormattedMessage id="app.page.addWixStores" defaultMessage="Add Wix Stores" />
+          </Card> : ecommerceInstalled === false ? <EmptyState theme="page" title={intl.formatMessage({ id: 'app.page.emptyStateTitle', defaultMessage: 'Add an eCommerce app to use GiftCraft' })} subtitle={intl.formatMessage({ id: 'app.page.emptyStateSubtitle', defaultMessage: 'GiftCraft charges gift-wrap and greeting-card fees at checkout. Add Wix Stores, Wix Bookings, or Wix Restaurants Orders — or any other Wix eCommerce app — to this site, then return here to configure your options.' })}>
+            <Button as="a" href={WIX_ECOMMERCE_APP_MARKET_URL} target="_blank" rel="noopener noreferrer">
+              <FormattedMessage id="app.page.addWixStores" defaultMessage="Browse eCommerce apps" />
             </Button>
           </EmptyState> : <Box direction="vertical" gap="16px">
+            {/* Blocking recovery state (storage not ready) renders nothing once storage is
+                healthy, so this stays first without pushing the table down in the common case. */}
             <StorageStatusCard storageReady={storageReady} storageState={storageState} storageErrorDetails={storageErrorDetails} storageRequestId={storageRequestId} busy={busy} onRetry={() => void checkStorage(storageState === 'provisioning' || storageState === 'timeout')} />
 
-            <PlanStatusCard entitlement={entitlement} isEntitlementLoading={isEntitlementLoading} upgradeUrl={upgradeUrl} onUpgrade={handleUpgrade} />
-
-            <Box gap="16px">
-              <Box width="33%">
-                <Card>
-                  <Card.Content>
-                    <Text secondary size="small"><FormattedMessage id="app.page.activeGiftOptions" defaultMessage="Active gift options" /></Text>
-                    <Heading size="medium"><FormattedMessage id="app.page.activeOfTotal" defaultMessage="{active} of {total} active" values={{ active: activeCount, total: options.length }} /></Heading>
-                    <Text size="tiny" secondary><FormattedMessage id="app.page.configurationPreviewOnly" defaultMessage="Configuration preview only" /></Text>
-                  </Card.Content>
-                </Card>
-              </Box>
-              <Box width="33%">
-                <Card>
-                  <Card.Content>
-                    <Text secondary size="small"><FormattedMessage id="app.page.shopperSelection" defaultMessage="Shopper selection" /></Text>
-                    <Heading size="medium"><FormattedMessage id="app.page.productModifier" defaultMessage="Product modifier" /></Heading>
-                    <Text size="tiny" secondary><FormattedMessage id="app.page.requiresMerchantModifierSetup" defaultMessage="Requires merchant modifier setup" /></Text>
-                  </Card.Content>
-                </Card>
-              </Box>
-              <Box width="33%">
-                <Card>
-                  <Card.Content>
-                    <Text secondary size="small"><FormattedMessage id="app.page.greetingCardsGwp" defaultMessage="Greeting cards & gift-with-purchase" /></Text>
-                    <Heading size="medium">{isPaid ? <FormattedMessage id="app.page.proUnlocked" defaultMessage="Pro unlocked" /> : <FormattedMessage id="app.page.proOnly" defaultMessage="Pro only" />}</Heading>
-                    <Text size="tiny" secondary><FormattedMessage id="app.page.notAddedToCheckout" defaultMessage="Not added to checkout or fulfillment" /></Text>
-                  </Card.Content>
-                </Card>
-              </Box>
-            </Box>
-
+            {/* Primary content: the merchant's gift options table, directly under the header. */}
             <GiftOptionsTable options={options} isPaid={isPaid} busy={busy} currency={currency} onToggleOption={toggleOptionActive} onRequestDelete={requestDeleteOption} />
+
+            <StatisticsWidget items={[{
+              value: intl.formatMessage({ id: 'app.page.activeOfTotal', defaultMessage: '{active} of {total} active' }, { active: activeCount, total: options.length }),
+              description: intl.formatMessage({ id: 'app.page.activeGiftOptions', defaultMessage: 'Active gift options' }),
+              descriptionInfo: intl.formatMessage({ id: 'app.page.configurationPreviewOnly', defaultMessage: 'Configuration preview only' }),
+            }, {
+              value: intl.formatMessage({ id: 'app.page.productModifier', defaultMessage: 'Product modifier' }),
+              description: intl.formatMessage({ id: 'app.page.shopperSelection', defaultMessage: 'Shopper selection' }),
+              descriptionInfo: intl.formatMessage({ id: 'app.page.requiresMerchantModifierSetup', defaultMessage: 'Requires merchant modifier setup' }),
+            }, {
+              value: isPaid ? intl.formatMessage({ id: 'app.page.proUnlocked', defaultMessage: 'Pro unlocked' }) : intl.formatMessage({ id: 'app.page.proOnly', defaultMessage: 'Pro only' }),
+              description: intl.formatMessage({ id: 'app.page.greetingCardsGwp', defaultMessage: 'Greeting cards & gift-with-purchase' }),
+              descriptionInfo: intl.formatMessage({ id: 'app.page.notAddedToCheckout', defaultMessage: 'Not added to checkout or fulfillment' }),
+            }]} />
+
+            {/* Renders nothing for a paid merchant with nothing to flag; free-plan upsell only. */}
+            <PlanStatusCard entitlement={entitlement} isEntitlementLoading={isEntitlementLoading} upgradeUrl={upgradeUrl} onUpgrade={handleUpgrade} />
 
             <CheckoutPreviewCard isPaid={isPaid} simItems={simItems} onUpdateQuantity={updateSimQuantity} onAddItem={addSimItem} enabledOptions={enabledOptions} selectedOptionId={selectedOptionId} onSelectOption={setSelectedOptionId} includeGreetingCard={includeGreetingCard} onToggleGreetingCard={() => setIncludeGreetingCard(!includeGreetingCard)} greetingMessage={greetingMessage} onGreetingMessageChange={setGreetingMessage} currentOption={currentOption} charValidation={charValidation} currency={currency} simSubtotal={simSubtotal} simResult={simResult} />
           </Box>}
