@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Box, Button, Card, Search, Table, TableToolbar, Text, ToggleSwitch, Tooltip } from '@wix/design-system';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { GiftOption, WrapStyle } from '../../../types';
-import { FREE_PLAN_MAX_ENABLED_OPTIONS } from '../../../backend/gift-engine';
+import { FREE_PLAN_MAX_ENABLED_OPTIONS } from '../../../shared/gift-engine';
 
 interface GiftOptionsTableProps {
   options: GiftOption[];

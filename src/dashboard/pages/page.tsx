@@ -10,7 +10,7 @@ import { emitDiagnostic, markDashboardLoaded, markSetupFinished } from '../../sh
 import { showAppToast } from '../../shared/toast';
 import { AppEntitlement, canUsePaidFeatures, getAppEntitlement, getWixPricingPageUrl } from '../../shared/entitlement';
 import { GiftOption, CheckoutLineItem, GiftSelection } from '../../types';
-import { evaluateGiftOptions, calculateSubtotal, validateGreetingMessage, restrictGiftOptionsForPlan, FREE_PLAN_MAX_ENABLED_OPTIONS } from '../../backend/gift-engine';
+import { evaluateGiftOptions, calculateSubtotal, validateGreetingMessage, restrictGiftOptionsForPlan, FREE_PLAN_MAX_ENABLED_OPTIONS } from '../../shared/gift-engine';
 import { PlanStatusCard } from './components/PlanStatusCard';
 import { StorageStatusCard } from './components/StorageStatusCard';
 import { GiftOptionsTable } from './components/GiftOptionsTable';

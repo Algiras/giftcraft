@@ -8,12 +8,12 @@ import {
   restrictGiftOptionsForPlan,
   calculateModifierSelectedGiftFees,
   DEFAULT_CARD_FEE,
-} from '../gift-engine';
-import { GiftOption, CheckoutLineItem, GiftSelection } from '../../types';
-import { emitDiagnostic, emitBackendDiagnostic } from '../../shared/logger';
+} from './gift-engine';
+import { GiftOption, CheckoutLineItem, GiftSelection } from '../types';
+import { emitDiagnostic, emitBackendDiagnostic } from './logger';
 
-vi.mock('../../shared/logger', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../shared/logger')>();
+vi.mock('./logger', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./logger')>();
   return {
     ...actual,
     emitDiagnostic: vi.fn(),

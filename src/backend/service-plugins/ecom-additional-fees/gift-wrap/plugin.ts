@@ -3,7 +3,7 @@ import { auth } from '@wix/essentials';
 import { items } from '@wix/data';
 import { COLLECTION_ID } from '../../../../shared/configuration';
 import { GiftOption } from '../../../../types';
-import { calculateModifierSelectedGiftFees } from '../../../gift-engine';
+import { calculateModifierSelectedGiftFees } from '../../../../shared/gift-engine';
 import { emitBackendDiagnostic as emitDiagnostic } from '../../../../shared/logger';
 import { getAppEntitlement } from '../../../../shared/entitlement';
 

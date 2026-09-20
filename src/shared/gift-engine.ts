@@ -6,8 +6,8 @@ import {
   GiftEvaluationDetail,
   WixAdditionalFee,
 } from '../types';
-import { emitDiagnostic, logger } from '../shared/logger';
-import { AppEntitlement, canUsePaidFeatures } from '../shared/entitlement';
+import { emitDiagnostic, logger } from './logger';
+import { AppEntitlement, canUsePaidFeatures } from './entitlement';
 
 // This module is reached from BOTH the SPI plugin (genuine backend, checkout
 // fee calculation) and the dashboard fee-preview UI (browser). The
