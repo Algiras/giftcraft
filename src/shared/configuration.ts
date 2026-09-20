@@ -1,4 +1,5 @@
 import { collections, items } from '@wix/data';
+import { auth } from '@wix/essentials';
 import {
   assessStorageRequirements,
   classifyStorageFailure,
@@ -6,6 +7,33 @@ import {
   type StorageReadinessAssessment,
   withStorageTimeout,
 } from '@wix-extensions/core/storage';
+
+/**
+ * This module is shared between the dashboard (browser, merchant session present)
+ * and backend contexts with no merchant session (App Tools provider, SPI plugins).
+ * Every exported function below defaults to the dashboard's non-elevated SDK calls
+ * and only switches to `auth.elevate` when a caller explicitly passes
+ * `{ elevated: true }` — that flag must be set ONLY from backend call sites.
+ * Dashboard callers must keep omitting it, exactly like `getAppEntitlement`
+ * in `shared/entitlement`.
+ */
+export type ConfigurationCallOptions = { elevated?: boolean };
+
+type GetDataCollection = typeof collections.getDataCollection;
+type ItemsQuery = typeof items.query;
+type ItemsSave = typeof items.save;
+
+function resolveGetDataCollection(elevated: boolean): GetDataCollection {
+  return elevated ? auth.elevate(collections.getDataCollection) : collections.getDataCollection;
+}
+
+function resolveItemsQuery(elevated: boolean): ItemsQuery {
+  return elevated ? auth.elevate(items.query) : items.query;
+}
+
+function resolveItemsSave(elevated: boolean): ItemsSave {
+  return elevated ? auth.elevate(items.save) : items.save;
+}
 
 export const COLLECTION_ID = '@krasalgim/giftcraft/giftcraft-options';
 const APP_NAME = 'GiftCraft';
@@ -25,11 +53,12 @@ const REQUIREMENT = {
   },
 } as const;
 
-export async function assessConfigurationStorage(): Promise<StorageReadinessAssessment> {
+export async function assessConfigurationStorage({ elevated = false }: ConfigurationCallOptions = {}): Promise<StorageReadinessAssessment> {
   try {
+    const getDataCollection = resolveGetDataCollection(elevated);
     return await withStorageTimeout(() =>
       assessStorageRequirements(
-        (id: string) => collections.getDataCollection(id, { consistentRead: true }),
+        (id: string) => getDataCollection(id, { consistentRead: true }),
         APP_NAME,
         [REQUIREMENT],
       ));
@@ -46,8 +75,8 @@ export async function assessConfigurationStorage(): Promise<StorageReadinessAsse
   }
 }
 
-export async function verifyConfigurationStorage(): Promise<boolean> {
-  return (await assessConfigurationStorage()).ready;
+export async function verifyConfigurationStorage(options: ConfigurationCallOptions = {}): Promise<boolean> {
+  return (await assessConfigurationStorage(options)).ready;
 }
 
 /**
@@ -104,8 +133,8 @@ export async function drainCursorPages<T>(
   return { records, capped };
 }
 
-export async function loadConfiguration<T>(): Promise<T[]> {
-  const firstPage = await items.query(COLLECTION_ID).eq('_id', 'configuration').limit(100).find({ consistentRead: true });
+export async function loadConfiguration<T>({ elevated = false }: ConfigurationCallOptions = {}): Promise<T[]> {
+  const firstPage = await resolveItemsQuery(elevated)(COLLECTION_ID).eq('_id', 'configuration').limit(100).find({ consistentRead: true });
   const { records, capped } = await drainCursorPages<{ payload?: { entries?: T[] } }>(firstPage as unknown as CursorPage<{ payload?: { entries?: T[] } }>);
   if (capped) {
     // The configuration item is a single document keyed by _id; capping here would only ever
@@ -115,14 +144,14 @@ export async function loadConfiguration<T>(): Promise<T[]> {
   return (records[0]?.payload?.entries as T[] | undefined) ?? [];
 }
 
-export async function saveConfiguration<T>(entries: T[]): Promise<void> {
-  await items.save(COLLECTION_ID, { _id: 'configuration', title: 'Configuration', payload: { entries } });
+export async function saveConfiguration<T>(entries: T[], { elevated = false }: ConfigurationCallOptions = {}): Promise<void> {
+  await resolveItemsSave(elevated)(COLLECTION_ID, { _id: 'configuration', title: 'Configuration', payload: { entries } });
 }
 
-export async function initializeConfiguration(): Promise<void> {
-  const readiness = await assessConfigurationStorage();
+export async function initializeConfiguration(options: ConfigurationCallOptions = {}): Promise<void> {
+  const readiness = await assessConfigurationStorage(options);
   if (!readiness.ready) {
     throw new Error(readiness.message);
   }
-  await items.query(COLLECTION_ID).eq('_id', 'configuration').find({ consistentRead: true });
+  await resolveItemsQuery(options.elevated ?? false)(COLLECTION_ID).eq('_id', 'configuration').find({ consistentRead: true });
 }

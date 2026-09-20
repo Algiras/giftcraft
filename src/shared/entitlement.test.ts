@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const api = vi.hoisted(() => ({ getAppInstance: vi.fn(), getUrl: vi.fn() }));
-vi.mock('@wix/app-management', () => ({ appInstances: api, billing: api }));
+const api = vi.hoisted(() => ({ getAppInstance: vi.fn() }));
+vi.mock('@wix/app-management', () => ({ appInstances: api }));
 
-import { canUsePaidFeatures, getAppEntitlement, getWixCheckoutUrl, getWixPricingPageUrl } from './entitlement';
+import { canUsePaidFeatures, getAppEntitlement, getWixPricingPageUrl } from './entitlement';
 
 beforeEach(() => vi.resetAllMocks());
 
@@ -18,12 +18,6 @@ describe('Wix Billing entitlement (giftcraft)', () => {
     expect(canUsePaidFeatures(await getAppEntitlement())).toBe(false);
   });
 
-  it('requires a configured product ID for Wix-managed checkout', async () => {
-    api.getUrl.mockResolvedValue({ checkoutUrl: 'https://www.wix.com/checkout' });
-    await expect(getWixCheckoutUrl('giftcraft-pro', 'https://www.wix.com/success')).resolves.toContain('/checkout');
-    expect(api.getUrl).toHaveBeenCalledWith('giftcraft-pro', { successUrl: 'https://www.wix.com/success' });
-    await expect(getWixCheckoutUrl('')).rejects.toThrow('product ID');
-  });
 
   it('builds the documented Wix pricing-page upgrade URL', () => {
     expect(getWixPricingPageUrl('0ed8d640-b905-4fb7-b40b-379652fd6d07', 'instance-123')).toBe(

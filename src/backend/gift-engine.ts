@@ -6,7 +6,7 @@ import {
   GiftEvaluationDetail,
   WixAdditionalFee,
 } from '../types';
-import { emitDiagnostic, logger } from '../shared/logger';
+import { emitBackendDiagnostic as emitDiagnostic, logger } from '../shared/logger';
 import { AppEntitlement, canUsePaidFeatures } from '../shared/entitlement';
 
 export const DEFAULT_CARD_FEE = 2.50;

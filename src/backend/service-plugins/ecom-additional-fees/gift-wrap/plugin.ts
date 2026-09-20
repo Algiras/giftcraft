@@ -4,7 +4,7 @@ import { items } from '@wix/data';
 import { COLLECTION_ID } from '../../../../shared/configuration';
 import { GiftOption } from '../../../../types';
 import { calculateModifierSelectedGiftFees } from '../../../gift-engine';
-import { emitDiagnostic } from '../../../../shared/logger';
+import { emitBackendDiagnostic as emitDiagnostic } from '../../../../shared/logger';
 import { getAppEntitlement } from '../../../../shared/entitlement';
 
 export async function calculateAdditionalFees(payload: Parameters<Parameters<typeof additionalFees.provideHandlers>[0]['calculateAdditionalFees']>[0]): Promise<additionalFees.CalculateAdditionalFeesResponse> {
@@ -12,7 +12,7 @@ export async function calculateAdditionalFees(payload: Parameters<Parameters<typ
   try {
     const [saved, entitlement] = await Promise.all([
       auth.elevate(items.query)(COLLECTION_ID).eq('_id', 'configuration').find({ consistentRead: true }),
-      getAppEntitlement(),
+      getAppEntitlement({ elevated: true }),
     ]);
     const options = (saved.items[0]?.entries ?? []) as GiftOption[];
     const fees = calculateModifierSelectedGiftFees((payload.request.lineItems ?? []).map(item => ({

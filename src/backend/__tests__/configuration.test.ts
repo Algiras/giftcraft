@@ -1,6 +1,16 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 
 const db = vi.hoisted(() => ({ entries: undefined as unknown, fail: false }));
+const elevateCalls = vi.hoisted(() => [] as unknown[]);
+
+vi.mock('@wix/essentials', () => ({
+  auth: {
+    elevate: (fn: unknown) => {
+      elevateCalls.push(fn);
+      return fn;
+    },
+  },
+}));
 
 vi.mock('@wix/data', () => ({
   items: {
@@ -36,17 +46,35 @@ vi.mock('@wix/data', () => ({
   },
 }));
 
-import { assessConfigurationStorage, loadConfiguration, saveConfiguration, initializeConfiguration, COLLECTION_ID } from '../../shared/configuration';
+import { assessConfigurationStorage, verifyConfigurationStorage, loadConfiguration, saveConfiguration, initializeConfiguration, COLLECTION_ID } from '../../shared/configuration';
 import { collections } from '@wix/data';
 
 beforeEach(() => {
   db.entries = undefined;
   db.fail = false;
+  elevateCalls.length = 0;
   vi.mocked(collections.getDataCollection).mockResolvedValue({
     _id: COLLECTION_ID,
     displayField: 'title',
     fields: [{ key: 'title', type: 'TEXT' }, { key: 'payload', type: 'OBJECT' }],
   } as never);
+});
+
+it('dashboard (default, non-elevated) calls never go through auth.elevate', async () => {
+  await loadConfiguration();
+  await saveConfiguration([{ id: 'one', enabled: true }]);
+  await assessConfigurationStorage();
+  await verifyConfigurationStorage();
+  expect(elevateCalls).toHaveLength(0);
+});
+
+it('backend (elevated: true) calls go through auth.elevate for both Data reads and writes', async () => {
+  await loadConfiguration({ elevated: true });
+  await saveConfiguration([{ id: 'one', enabled: true }], { elevated: true });
+  await assessConfigurationStorage({ elevated: true });
+  await verifyConfigurationStorage({ elevated: true });
+  // items.query, items.save, collections.getDataCollection - one elevate() per call above.
+  expect(elevateCalls.length).toBeGreaterThanOrEqual(4);
 });
 
 it('keeps new installations empty, round-trips create/edit/delete without restoring defaults', async () => {

@@ -64,6 +64,21 @@ export function emitDiagnostic(eventName: DiagnosticEventName, input: Diagnostic
 /** Call once when the app's dashboard page mounts; measures install -> visit adoption. */
 export const markDashboardLoaded = diagnostics.markDashboardLoaded;
 
+/**
+ * Elevated diagnostics surface for BACKEND-ONLY callers (SPI plugins, backend
+ * verification/lifecycle code). Backend contexts have no merchant session, so
+ * a plain BI send fails with "Missing authentication information" — these
+ * must go through `auth.elevate`. This module is also imported by dashboard
+ * code (`emitDiagnostic`/`markDashboardLoaded` above), which must NOT
+ * elevate, so backend callers import `emitBackendDiagnostic` instead of
+ * `emitDiagnostic`.
+ */
+const backendDiagnostics = createDiagnostics({ appName: APP_NAME, appVersion: APP_VERSION, schemaVersion: '1', elevated: true });
+
+export function emitBackendDiagnostic(eventName: DiagnosticEventName, input: DiagnosticInput): void {
+  backendDiagnostics.emitDiagnostic(eventName, input);
+}
+
 class GiftCraftLogger extends AppLogger {
   trackUsage(event: string, metrics: Record<string, number | string | boolean>): void {
     const payload = {
