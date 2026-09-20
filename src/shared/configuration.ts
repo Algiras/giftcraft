@@ -1,10 +1,11 @@
-import { collections, items, permissions } from '@wix/data';
+import { collections, items } from '@wix/data';
 import {
+  assessStorageRequirements,
   classifyStorageFailure,
   provisioningMessage,
   type StorageReadinessAssessment,
   withStorageTimeout,
-} from './storage-readiness';
+} from '@wix-extensions/core/storage';
 
 export const COLLECTION_ID = '@krasalgim/giftcraft/giftcraft-options';
 const APP_NAME = 'GiftCraft';
@@ -24,35 +25,14 @@ const REQUIREMENT = {
   },
 } as const;
 
-function hasRequiredShape(collection: { _id?: string; displayField?: string | null; fields?: Array<{ key?: string; type?: string }> }): boolean {
-  const fields = collection.fields ?? [];
-  return collection._id === REQUIREMENT.id
-    && collection.displayField === REQUIREMENT.displayField
-    && REQUIREMENT.fields.every(required => fields.some(field => field.key === required.key && field.type === required.type));
-}
-
-function hasPrivilegedAccess(dataPermissions: Record<string, string> | undefined): boolean {
-  return Object.entries(REQUIREMENT.dataPermissions).every(([action, role]) => dataPermissions?.[action] === role);
-}
-
 export async function assessConfigurationStorage(): Promise<StorageReadinessAssessment> {
   try {
-    return await withStorageTimeout(async () => {
-      const collection = await collections.getDataCollection(COLLECTION_ID, { consistentRead: true });
-      const dataPermissions = await permissions.getPermissions(COLLECTION_ID) as Record<string, string>;
-      if (!hasRequiredShape(collection)) {
-        return {
-          ready: false,
-          state: 'schema_mismatch',
-          message: provisioningMessage(APP_NAME),
-          details: `Collection ${COLLECTION_ID} does not match the required schema.`,
-        };
-      }
-      if (!hasPrivilegedAccess(dataPermissions)) {
-        return classifyStorageFailure(new Error('403 Forbidden'), APP_NAME);
-      }
-      return { ready: true, state: 'ready', message: '' };
-    });
+    return await withStorageTimeout(() =>
+      assessStorageRequirements(
+        (id: string) => collections.getDataCollection(id, { consistentRead: true }),
+        APP_NAME,
+        [REQUIREMENT],
+      ));
   } catch (error) {
     if (error instanceof Error && error.message === 'STORAGE_CHECK_TIMEOUT') {
       return {

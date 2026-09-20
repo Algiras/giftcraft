@@ -34,18 +34,10 @@ vi.mock('@wix/data', () => ({
       fields: [{ key: 'title', type: 'TEXT' }, { key: 'payload', type: 'OBJECT' }],
     })),
   },
-  permissions: {
-    getPermissions: vi.fn(async () => ({
-      itemRead: 'PRIVILEGED',
-      itemInsert: 'PRIVILEGED',
-      itemUpdate: 'PRIVILEGED',
-      itemRemove: 'PRIVILEGED',
-    })),
-  },
 }));
 
 import { assessConfigurationStorage, loadConfiguration, saveConfiguration, initializeConfiguration, COLLECTION_ID } from '../../shared/configuration';
-import { collections, permissions } from '@wix/data';
+import { collections } from '@wix/data';
 
 beforeEach(() => {
   db.entries = undefined;
@@ -54,12 +46,6 @@ beforeEach(() => {
     _id: COLLECTION_ID,
     displayField: 'title',
     fields: [{ key: 'title', type: 'TEXT' }, { key: 'payload', type: 'OBJECT' }],
-  } as never);
-  vi.mocked(permissions.getPermissions).mockResolvedValue({
-    itemRead: 'PRIVILEGED',
-    itemInsert: 'PRIVILEGED',
-    itemUpdate: 'PRIVILEGED',
-    itemRemove: 'PRIVILEGED',
   } as never);
 });
 
@@ -93,11 +79,11 @@ it('verifies the collection is queryable when properly provisioned', async () =>
   expect(items.query).toHaveBeenCalledWith(COLLECTION_ID);
 });
 
-it('reports permission failures distinctly from provisioning', async () => {
+it('reports provisioning failures on forbidden metadata access', async () => {
   vi.mocked(collections.getDataCollection).mockRejectedValueOnce(new Error('403 Forbidden'));
   const readiness = await assessConfigurationStorage();
   expect(readiness.ready).toBe(false);
-  expect(readiness.state).toBe('permission');
+  expect(readiness.state).toBe('provisioning');
 });
 
 it('rejects an existing collection with incompatible schema', async () => {
