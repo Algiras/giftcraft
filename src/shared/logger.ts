@@ -29,6 +29,7 @@ export type DiagnosticEventName =
   | 'configuration_load'
   | 'configuration_save'
   | 'dashboard_error'
+  | 'client_error'
   | 'upgrade_click'
   | 'fee_rule_evaluated'
   | 'app_installed'
@@ -45,6 +46,10 @@ export type DiagnosticInput = {
   wixRequestId?: string;
   surface?: 'dashboard' | 'fee_rules' | 'spi' | 'backend_event';
   mode?: 'sample' | 'real';
+  /** 'uncaught_error'/'unhandled_rejection' from installGlobalErrorReporting, forwarded for 'client_error' events. */
+  kind?: 'uncaught_error' | 'unhandled_rejection';
+  /** Short merchant-quotable reference from DashboardErrorBoundary, forwarded for 'dashboard_error' events so a support report can be matched to this diagnostic. */
+  reference?: string;
 };
 
 const APP_NAME = 'giftcraft';

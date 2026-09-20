@@ -6,8 +6,19 @@ import {
   GiftEvaluationDetail,
   WixAdditionalFee,
 } from '../types';
-import { emitBackendDiagnostic as emitDiagnostic, logger } from '../shared/logger';
+import { emitDiagnostic, logger } from '../shared/logger';
 import { AppEntitlement, canUsePaidFeatures } from '../shared/entitlement';
+
+// This module is reached from BOTH the SPI plugin (genuine backend, checkout
+// fee calculation) and the dashboard fee-preview UI (browser). The
+// diagnostics emitter is therefore injectable on both entry points below:
+// they default to the PLAIN, dashboard-safe `emitDiagnostic` (which does not
+// elevate), and the SPI plugin call site passes the elevated
+// `emitBackendDiagnostic` explicitly. See
+// `05-volume-tiered-pricing/discountcraft/src/shared/configuration.ts` for
+// the equivalent reader/option parameterization pattern used elsewhere in
+// this portfolio.
+type DiagnosticEmitter = typeof emitDiagnostic;
 
 export const DEFAULT_CARD_FEE = 2.50;
 export const WRAP_MODIFIER_GROUP = 'GiftCraft wrap';
@@ -54,7 +65,8 @@ export function restrictGiftOptionsForPlan(options: GiftOption[], entitlement: A
 export function calculateModifierSelectedGiftFees(
   lineItems: CheckoutLineItem[],
   options: GiftOption[],
-  entitlement: AppEntitlement = { status: 'paid' }
+  entitlement: AppEntitlement = { status: 'paid' },
+  emit: DiagnosticEmitter = emitDiagnostic
 ): WixAdditionalFee[] {
   const restrictedOptions = restrictGiftOptionsForPlan(options, entitlement);
   const allowGreetingCardFee = canUsePaidFeatures(entitlement);
@@ -98,7 +110,7 @@ export function calculateModifierSelectedGiftFees(
       }
     }
   }
-  emitDiagnostic('fee_rule_evaluated', {
+  emit('fee_rule_evaluated', {
     outcome: 'success',
     surface: 'fee_rules',
     mode: 'real',
@@ -174,7 +186,7 @@ export function validateGreetingMessage(
 /**
  * Evaluates gift options, wrapping fees, greeting card waivers, and gift-with-purchase incentives.
  */
-export function evaluateGiftOptions(input: GiftEvaluationInput): GiftEvaluationResult {
+export function evaluateGiftOptions(input: GiftEvaluationInput, emit: DiagnosticEmitter = emitDiagnostic): GiftEvaluationResult {
   const subtotal = calculateSubtotal(input.lineItems);
   const details: GiftEvaluationDetail[] = [];
   const fees: WixAdditionalFee[] = [];
@@ -315,7 +327,7 @@ export function evaluateGiftOptions(input: GiftEvaluationInput): GiftEvaluationR
     characterLimitValid: messageValidation.valid,
   });
 
-  emitDiagnostic('fee_rule_evaluated', {
+  emit('fee_rule_evaluated', {
     outcome: 'success',
     surface: 'dashboard',
     mode: 'sample',

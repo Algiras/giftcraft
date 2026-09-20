@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   calculateSubtotal,
   getItemProductId,
@@ -10,6 +10,16 @@ import {
   DEFAULT_CARD_FEE,
 } from '../gift-engine';
 import { GiftOption, CheckoutLineItem, GiftSelection } from '../../types';
+import { emitDiagnostic, emitBackendDiagnostic } from '../../shared/logger';
+
+vi.mock('../../shared/logger', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../shared/logger')>();
+  return {
+    ...actual,
+    emitDiagnostic: vi.fn(),
+    emitBackendDiagnostic: vi.fn(),
+  };
+});
 
 describe('GiftCraft Core Engine Test Suite', () => {
   const sampleOptions: GiftOption[] = [
@@ -322,5 +332,41 @@ describe('Free vs. Pro plan gating (publishing_config.json benefits)', () => {
     const freeFees = calculateModifierSelectedGiftFees(lineItems, options, { status: 'free' });
     expect(freeFees.some(f => f.code.startsWith('GIFT_CARD_'))).toBe(false);
     expect(freeFees.some(f => f.code.startsWith('GIFT_WRAP_'))).toBe(true);
+  });
+
+  describe('Diagnostics Emitter Injection (dashboard-safe by default)', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    const modifierOptions: GiftOption[] = [
+      { id: 'classic', name: 'Classic', wrapStyle: 'classic_ribbon', price: 5, characterLimit: 200, enabled: true, taxable: true },
+    ];
+    const modifierLineItems: CheckoutLineItem[] = [{
+      id: 'line-1', quantity: 1, price: 20,
+      modifierGroups: [{ name: 'GiftCraft wrap', modifiers: [{ label: 'Classic', quantity: 1 }] }],
+    }];
+
+    it('calculateModifierSelectedGiftFees defaults to the PLAIN (non-elevated) emitter, matching the dashboard-preview call site', () => {
+      calculateModifierSelectedGiftFees(modifierLineItems, modifierOptions, { status: 'paid' });
+      expect(emitDiagnostic).toHaveBeenCalledWith('fee_rule_evaluated', expect.objectContaining({ outcome: 'success' }));
+      expect(emitBackendDiagnostic).not.toHaveBeenCalled();
+    });
+
+    it('calculateModifierSelectedGiftFees emits via the elevated backend emitter only when the SPI plugin explicitly injects it', () => {
+      calculateModifierSelectedGiftFees(modifierLineItems, modifierOptions, { status: 'paid' }, emitBackendDiagnostic);
+      expect(emitBackendDiagnostic).toHaveBeenCalledWith('fee_rule_evaluated', expect.objectContaining({ outcome: 'success' }));
+      expect(emitDiagnostic).not.toHaveBeenCalled();
+    });
+
+    it('evaluateGiftOptions (checkout-preview, dashboard-only caller) defaults to the PLAIN (non-elevated) emitter', () => {
+      evaluateGiftOptions({
+        lineItems: [{ price: 40, quantity: 1 }],
+        selection: { optionId: 'classic', greetingMessage: 'Hi!' },
+        options: modifierOptions,
+      });
+      expect(emitDiagnostic).toHaveBeenCalledWith('fee_rule_evaluated', expect.objectContaining({ outcome: 'success', surface: 'dashboard' }));
+      expect(emitBackendDiagnostic).not.toHaveBeenCalled();
+    });
   });
 });

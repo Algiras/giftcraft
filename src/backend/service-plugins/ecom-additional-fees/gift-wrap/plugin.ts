@@ -23,7 +23,7 @@ export async function calculateAdditionalFees(payload: Parameters<Parameters<typ
         name: group.name?.original,
         modifiers: (group.modifiers ?? []).map(modifier => ({ label: modifier.label?.original, quantity: modifier.quantity ?? undefined })),
       })),
-    })), options, entitlement);
+    })), options, entitlement, emitDiagnostic);
 
     emitDiagnostic('additional_fees_calculated', {
       outcome: 'success',

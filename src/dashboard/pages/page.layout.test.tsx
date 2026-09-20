@@ -148,7 +148,7 @@ describe('GiftCraft dashboard: information hierarchy', () => {
     });
 
     expect(screen.getByText('Upgrade to Pro')).toBeTruthy();
-    expect(screen.getByText('Contact support')).toBeTruthy();
+    expect(screen.queryByText('Contact support')).toBeNull();
   });
 
   it('shows a Pro plan badge in the header for a paid merchant instead of a standing banner', async () => {

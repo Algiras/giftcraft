@@ -1,6 +1,6 @@
 import { withIntlProvider } from '../../intl/withIntlProvider';
 import { FormattedMessage, useIntl } from 'react-intl';
-import React, { useState, useEffect, useCallback, Component, type ReactNode, type ErrorInfo } from 'react';
+import React, { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { WixDesignSystemProvider, Page, Box, Card, Heading, Text, Loader, Button, EmptyState, Badge, StatisticsWidget } from '@wix/design-system';
 import '@wix/design-system/styles.global.css';
 import { appInstances } from '@wix/app-management';
@@ -19,73 +19,37 @@ import { DeleteConfirmModal } from './components/DeleteConfirmModal';
 import { CheckoutPreviewCard } from './components/CheckoutPreviewCard';
 import { resolveEcommerceInstalled, WIX_ECOMMERCE_APP_MARKET_URL, type EcommerceInstallState } from '../../shared/ecommerce';
 import { loadStoreCurrency } from '../../shared/store-currency';
+import { DashboardErrorBoundary } from '@wix-extensions/core/ui';
+import { installGlobalErrorReporting } from '@wix-extensions/core/telemetry';
 export const APP_ID = '0ed8d640-b905-4fb7-b40b-379652fd6d07';
-interface ErrorBoundaryProps {
-  children: ReactNode;
-}
-interface ErrorBoundaryState {
-  hasError: boolean;
-  error: string;
-}
-export /** Error fallback lives in a function component so it can use the `useIntl`
- * hook; a class component cannot, and Wix Design System string props such as
- * `title`/`subtitle` must receive strings rather than elements. */
-function ErrorBoundaryFallback({ error, onRetry }: { error: string; onRetry: () => void }) {
-  const intl = useIntl();
-  return <WixDesignSystemProvider>
-      <Page height="100vh">
-        <Page.Header title={intl.formatMessage({ id: 'app.error.pageTitle', defaultMessage: 'GiftCraft: Wrap & Cards' })} subtitle={intl.formatMessage({ id: 'app.error.recoveringSubtitle', defaultMessage: 'Error recovering dashboard view' })} />
-        <Page.Content>
-          <Card>
-            <Card.Content>
-              <Box direction="vertical" gap="12px">
-                <Heading size="small"><FormattedMessage id="app.error.loadFailedHeading" defaultMessage="Something went wrong loading the dashboard." /></Heading>
-                <Text size="small" secondary>
-                  {error || <FormattedMessage id="app.error.unexpectedError" defaultMessage="An unexpected error occurred in the dashboard." />}
-                </Text>
-                <Box gap="8px">
-                  <Button size="small" onClick={onRetry}>
-                    <FormattedMessage id="app.error.tryAgain" defaultMessage="Try again" />
-                  </Button>
-                </Box>
-              </Box>
-            </Card.Content>
-          </Card>
-        </Page.Content>
-      </Page>
-    </WixDesignSystemProvider>;
-}
 
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = {
-      hasError: false,
-      error: ''
-    };
-  }
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return {
-      hasError: true,
-      // Raw exception text (when present) is inherently dynamic, unlocalizable content;
-      // the empty-message fallback is rendered via a translated message instead, below.
-      error: error.message || ''
-    };
-  }
-  componentDidCatch(error: Error, info: ErrorInfo): void {
-    console.error('[GiftCraft] Dashboard error caught by boundary:', error, info);
+// Wraps the dashboard tree with the shared DashboardErrorBoundary. This is a
+// function component (rather than inlining DashboardErrorBoundary directly at
+// the call site) so it can call useIntl() for localized fallback copy — it
+// renders inside withIntlProvider's IntlProvider, since GiftCraftDashboardRoot
+// (which renders this) is itself the child passed to withIntlProvider(...).
+function GiftCraftDashboardBoundary({ children }: { children: ReactNode }) {
+  const intl = useIntl();
+  const handleError = (error: Error, _componentStack: string, reference: string) => {
     emitDiagnostic('dashboard_error', {
       outcome: 'failure',
       errorCode: 'REACT_ERROR_BOUNDARY',
-      surface: 'dashboard'
+      surface: 'dashboard',
+      reference
     });
-  }
-  render() {
-    if (this.state.hasError) {
-      return <ErrorBoundaryFallback error={this.state.error} onRetry={() => this.setState({ hasError: false, error: '' })} />;
-    }
-    return this.props.children;
-  }
+  };
+  return <DashboardErrorBoundary
+      appName="GiftCraft"
+      onError={handleError}
+      title={intl.formatMessage({ id: 'app.error.loadFailedHeading', defaultMessage: 'Something went wrong loading the dashboard.' })}
+      subtitle={intl.formatMessage({ id: 'app.error.dashboardSubtitle', defaultMessage: 'The dashboard could not finish loading. Reloading usually fixes it. If it keeps happening, contact support and quote the reference below.' })}
+      reloadLabel={intl.formatMessage({ id: 'app.error.tryAgain', defaultMessage: 'Try again' })}
+      detailsShowLabel={intl.formatMessage({ id: 'app.error.detailsShowLabel', defaultMessage: 'Show technical details' })}
+      detailsHideLabel={intl.formatMessage({ id: 'app.error.detailsHideLabel', defaultMessage: 'Hide technical details' })}
+      referenceLabel={intl.formatMessage({ id: 'app.error.referenceLabel', defaultMessage: 'Reference' })}
+    >
+      {children}
+    </DashboardErrorBoundary>;
 }
 const INITIAL_OPTIONS: GiftOption[] = [{
   id: 'opt-classic',
@@ -402,10 +366,27 @@ export function GiftCraftDashboard() {
   </>;
 }
 function GiftCraftDashboardRoot() {
-  return <ErrorBoundary>
+  // Global capture for errors an error boundary cannot see: event-handler
+  // throws, timer callbacks, and unhandled promise rejections (e.g. a failed
+  // save or SDK call). Only errorCode/kind are forwarded — never message or
+  // source, which can carry merchant/customer PII via stack text or URLs.
+  useEffect(() => {
+    return installGlobalErrorReporting({
+      report: report => {
+        emitDiagnostic('client_error', {
+          outcome: 'failure',
+          errorCode: report.errorCode,
+          surface: 'dashboard',
+          kind: report.kind
+        });
+      }
+    });
+  }, []);
+
+  return <GiftCraftDashboardBoundary>
       <WixDesignSystemProvider>
         <GiftCraftDashboard />
       </WixDesignSystemProvider>
-    </ErrorBoundary>;
+    </GiftCraftDashboardBoundary>;
 }
 export default withIntlProvider(GiftCraftDashboardRoot);
