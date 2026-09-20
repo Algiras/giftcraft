@@ -40,17 +40,17 @@ vi.mock('@wix/data', () => ({
           }),
         }),
       }),
+      // Storage-readiness probe path: query(id).limit(1).find(...) (see createItemsQueryReader).
+      limit: () => ({
+        find: async () => {
+          if (state.collectionMissing) throw new Error('WDE0025 data collection was not found');
+          return { items: [] };
+        },
+      }),
     }),
   },
   collections: {
-    getDataCollection: async () => {
-      if (state.collectionMissing) throw new Error('WDE0025 data collection was not found');
-      return {
-        _id: '@krasalgim/giftcraft/giftcraft-options',
-        displayField: 'title',
-        fields: [{ key: 'title', type: 'TEXT' }, { key: 'payload', type: 'OBJECT' }],
-      };
-    },
+    getDataCollection: vi.fn(),
   },
 }));
 

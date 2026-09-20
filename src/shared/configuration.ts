@@ -1,8 +1,9 @@
-import { collections, items } from '@wix/data';
+import { items } from '@wix/data';
 import { auth } from '@wix/essentials';
 import {
   assessStorageRequirements,
   classifyStorageFailure,
+  createItemsQueryReader,
   provisioningMessage,
   type StorageReadinessAssessment,
   withStorageTimeout,
@@ -19,13 +20,8 @@ import {
  */
 export type ConfigurationCallOptions = { elevated?: boolean };
 
-type GetDataCollection = typeof collections.getDataCollection;
 type ItemsQuery = typeof items.query;
 type ItemsSave = typeof items.save;
-
-function resolveGetDataCollection(elevated: boolean): GetDataCollection {
-  return elevated ? auth.elevate(collections.getDataCollection) : collections.getDataCollection;
-}
 
 function resolveItemsQuery(elevated: boolean): ItemsQuery {
   return elevated ? auth.elevate(items.query) : items.query;
@@ -53,12 +49,23 @@ const REQUIREMENT = {
   },
 } as const;
 
+/**
+ * ROOT CAUSE FIX: this used to probe with `collections.getDataCollection`,
+ * which requires `SCOPE.DC-DATA.DATA-COLLECTIONS-MANAGE` -- a scope
+ * GiftCraft (like every app in this portfolio) does not hold, so the check
+ * 403'd permanently. It now probes with `items.query(...).limit(1).find(...)`,
+ * which only needs `SCOPE.DC-DATA.READ` (a scope this app already holds).
+ * Trade-off: an `items.query` probe cannot see collection structure, so
+ * schema/permission verification is no longer possible via this path --
+ * `assessStorageRequirements` reports the collection as ready-but-unverified
+ * (`shapeUnknown`) instead of faking a schema check. See
+ * `packages/core/src/storage/probe.ts` for the full incident writeup.
+ */
 export async function assessConfigurationStorage({ elevated = false }: ConfigurationCallOptions = {}): Promise<StorageReadinessAssessment> {
   try {
-    const getDataCollection = resolveGetDataCollection(elevated);
     return await withStorageTimeout(() =>
       assessStorageRequirements(
-        (id: string) => getDataCollection(id, { consistentRead: true }),
+        createItemsQueryReader(resolveItemsQuery(elevated)),
         APP_NAME,
         [REQUIREMENT],
       ));
