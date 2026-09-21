@@ -86,58 +86,34 @@ export async function verifyConfigurationStorage(options: ConfigurationCallOptio
   return (await assessConfigurationStorage(options)).ready;
 }
 
-/**
- * Minimal shape of the SDK's CursorBasedIterator (@wix/sdk-runtime query-iterators.d.ts)
- * that the drain loop below relies on. Only `items`/`hasNext`/`next` are used —
- * offset-style members (currentPage/totalPages/totalCount) must never appear here.
- */
-export interface CursorPage<T> {
-  items: T[];
-  hasNext(): boolean;
-  next(): Promise<CursorPage<T>>;
-}
+import {
+  DEFAULT_DRAIN_MAX_PAGES,
+  DEFAULT_DRAIN_MAX_RECORDS,
+  drainCursorPages as coreDrainCursorPages,
+  type CursorPage,
+} from '@wix-extensions/core/storage';
 
-/** Hard safety cap for draining a cursor-based query fully into memory. */
-export const DRAIN_MAX_PAGES = 20;
-export const DRAIN_MAX_RECORDS = 1000;
+export const DRAIN_MAX_PAGES = DEFAULT_DRAIN_MAX_PAGES;
+export const DRAIN_MAX_RECORDS = DEFAULT_DRAIN_MAX_RECORDS;
 
+export type { CursorPage };
 export interface DrainResult<T> {
   records: T[];
-  /** True when the drain stopped early because it hit the page or record cap, not because the collection ended. */
   capped: boolean;
 }
 
 /**
- * Fully drains a cursor-based query result (hasNext()/next()), for collections that are
- * known to be bounded merchant configuration rather than user-facing unbounded data.
- * Stops after `maxPages` pages or `maxRecords` records so a runaway collection can never
- * hang the caller — never introduces offset/skip paging.
+ * Fully drains a cursor-based query result delegating to @wix-extensions/core/storage.
  */
 export async function drainCursorPages<T>(
   firstPage: CursorPage<T>,
-  { maxPages = DRAIN_MAX_PAGES, maxRecords = DRAIN_MAX_RECORDS }: { maxPages?: number; maxRecords?: number } = {}
+  opts: { maxPages?: number; maxRecords?: number } = {},
 ): Promise<DrainResult<T>> {
-  let page = firstPage;
-  let records: T[] = [...page.items];
-  let pagesRead = 1;
-  let capped = false;
-
-  while (page.hasNext()) {
-    if (pagesRead >= maxPages || records.length >= maxRecords) {
-      capped = true;
-      break;
-    }
-    page = await page.next();
-    records = records.concat(page.items);
-    pagesRead += 1;
-  }
-
-  if (records.length > maxRecords) {
-    records = records.slice(0, maxRecords);
-    capped = true;
-  }
-
-  return { records, capped };
+  const res = await coreDrainCursorPages(firstPage, {
+    maxPages: opts.maxPages ?? DRAIN_MAX_PAGES,
+    maxRecords: opts.maxRecords ?? DRAIN_MAX_RECORDS,
+  });
+  return { records: res.records, capped: res.capped };
 }
 
 export async function loadConfiguration<T>({ elevated = false }: ConfigurationCallOptions = {}): Promise<T[]> {
