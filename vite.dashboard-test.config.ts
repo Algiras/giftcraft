@@ -33,6 +33,9 @@ function wixServiceMocks(): Plugin {
       };
     `,
     essentials: `
+      export const auth = {
+        elevate: (fn) => fn,
+      };
       function currentLang() {
         const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
         return (params && params.get('lang')) || 'en';
