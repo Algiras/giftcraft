@@ -1,6 +1,19 @@
 import React, { useState } from 'react';
-import { Box, CustomModalLayout, FormField, Input, Modal, NumberInput, SectionHelper, Text } from '@wix/design-system';
 import { FormattedMessage, useIntl } from 'react-intl';
+import {
+  Box,
+  CustomModalLayout,
+  Dropdown,
+  FormField,
+  Input,
+  Modal,
+  NumberInput,
+  SectionHelper,
+  Text,
+  TextButton,
+  listItemSelectBuilder,
+} from '@wix/design-system';
+import type { ProductLookupItem } from '@wix-extensions/core/lookups';
 import { GiftOption, WrapStyle } from '../../../types';
 
 interface AddGiftOptionModalProps {
@@ -8,11 +21,12 @@ interface AddGiftOptionModalProps {
   isPaid: boolean;
   onClose: () => void;
   onCreate: (option: GiftOption) => void;
+  products?: ProductLookupItem[];
 }
 
 const WRAP_STYLES: WrapStyle[] = ['classic_ribbon', 'luxury_gold', 'eco_kraft', 'holiday_festive', 'custom'];
 
-export function AddGiftOptionModal({ isOpen, isPaid, onClose, onCreate }: AddGiftOptionModalProps) {
+export function AddGiftOptionModal({ isOpen, isPaid, onClose, onCreate, products = [] }: AddGiftOptionModalProps) {
   const intl = useIntl();
   const [name, setName] = useState('');
   const [wrapStyle, setWrapStyle] = useState<WrapStyle>('classic_ribbon');
@@ -21,6 +35,7 @@ export function AddGiftOptionModal({ isOpen, isPaid, onClose, onCreate }: AddGif
   const [freeThreshold, setFreeThreshold] = useState<number | undefined>(undefined);
   const [freeCardThreshold, setFreeCardThreshold] = useState<number | undefined>(undefined);
   const [gwpProduct, setGwpProduct] = useState('');
+  const [isManualProduct, setIsManualProduct] = useState(false);
   const [gwpSubtotal, setGwpSubtotal] = useState<number | undefined>(undefined);
   const [nameError, setNameError] = useState<string | undefined>(undefined);
 
@@ -32,6 +47,7 @@ export function AddGiftOptionModal({ isOpen, isPaid, onClose, onCreate }: AddGif
     setFreeThreshold(undefined);
     setFreeCardThreshold(undefined);
     setGwpProduct('');
+    setIsManualProduct(false);
     setGwpSubtotal(undefined);
     setNameError(undefined);
   };
@@ -141,7 +157,60 @@ export function AddGiftOptionModal({ isOpen, isPaid, onClose, onCreate }: AddGif
           <Box gap="16px">
             <Box flexGrow={1}>
               <FormField label={intl.formatMessage({ id: 'app.addModal.gwpProductLabel', defaultMessage: 'Gift-with-purchase item (optional)' })}>
-                <Input disabled={!isPaid} value={gwpProduct} onChange={(e: any) => setGwpProduct(e.target.value)} placeholder={intl.formatMessage({ id: 'app.addModal.gwpProductPlaceholder', defaultMessage: 'e.g. Deluxe keepsake tag' })} />
+                {products.length > 0 && !isManualProduct ? (
+                  <Box direction="vertical" gap="4px">
+                    <Dropdown
+                      disabled={!isPaid}
+                      placeholder={intl.formatMessage({ id: 'app.addModal.gwpProductPlaceholder', defaultMessage: 'e.g. Deluxe keepsake tag' })}
+                      options={products.map(p => listItemSelectBuilder({
+                        id: p.name,
+                        title: p.name,
+                        subtitle: p.sku ? `SKU: ${p.sku}` : undefined,
+                        suffix: p.price ? <Text size="tiny" secondary>{p.price}</Text> : undefined,
+                      }))}
+                      selectedId={products.find(p => p.name === gwpProduct)?.name || gwpProduct || undefined}
+                      onSelect={opt => {
+                        if (opt?.id) setGwpProduct(String(opt.id));
+                      }}
+                      valueParser={(opt: any) => opt?.title || opt?.label || ''}
+                      clearButton
+                      onClear={() => setGwpProduct('')}
+                    />
+                    <Box>
+                      <TextButton
+                        size="tiny"
+                        priority="secondary"
+                        disabled={!isPaid}
+                        onClick={() => setIsManualProduct(true)}
+                      >
+                        <FormattedMessage id="app.addModal.enterItemManually" defaultMessage="Enter item name manually" />
+                      </TextButton>
+                    </Box>
+                  </Box>
+                ) : (
+                  <Box direction="vertical" gap="4px">
+                    <Input
+                      disabled={!isPaid}
+                      value={gwpProduct}
+                      onChange={(e: any) => setGwpProduct(e.target.value)}
+                      placeholder={intl.formatMessage({ id: 'app.addModal.gwpProductPlaceholder', defaultMessage: 'e.g. Deluxe keepsake tag' })}
+                      clearButton
+                      onClear={() => setGwpProduct('')}
+                    />
+                    {products.length > 0 && (
+                      <Box>
+                        <TextButton
+                          size="tiny"
+                          priority="secondary"
+                          disabled={!isPaid}
+                          onClick={() => setIsManualProduct(false)}
+                        >
+                          <FormattedMessage id="app.addModal.chooseFromCatalog" defaultMessage="← Choose from product catalog" />
+                        </TextButton>
+                      </Box>
+                    )}
+                  </Box>
+                )}
               </FormField>
             </Box>
             <Box flexGrow={1}>

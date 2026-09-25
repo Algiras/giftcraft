@@ -3,11 +3,13 @@ import { auth } from '@wix/essentials';
 import {
   assessStorageRequirements,
   classifyStorageFailure,
+  collectionsToRequirements,
   createItemsQueryReader,
   provisioningMessage,
   type StorageReadinessAssessment,
   withStorageTimeout,
 } from '@wix-extensions/core/storage';
+import { DATA_COLLECTIONS_EXTENSION } from '../backend/data-collections/collections';
 
 /**
  * This module is shared between the dashboard (browser, merchant session present)
@@ -34,20 +36,7 @@ function resolveItemsSave(elevated: boolean): ItemsSave {
 export const COLLECTION_ID = '@krasalgim/giftcraft/giftcraft-options';
 const APP_NAME = 'GiftCraft';
 
-const REQUIREMENT = {
-  id: COLLECTION_ID,
-  displayField: 'title',
-  fields: [
-    { key: 'title', type: 'TEXT' },
-    { key: 'payload', type: 'OBJECT' },
-  ],
-  dataPermissions: {
-    itemRead: 'PRIVILEGED',
-    itemInsert: 'PRIVILEGED',
-    itemUpdate: 'PRIVILEGED',
-    itemRemove: 'PRIVILEGED',
-  },
-} as const;
+const REQUIREMENT = collectionsToRequirements('@krasalgim/giftcraft', DATA_COLLECTIONS_EXTENSION)[0];
 
 /**
  * ROOT CAUSE FIX: this used to probe with `collections.getDataCollection`,

@@ -35,6 +35,7 @@ export type DiagnosticEventName =
   | 'app_installed'
   | 'app_removed'
   | 'app_paid_plan_changed'
+  | 'gift_automation_report'
   | 'additional_fees_calculated';
 
 export type DiagnosticOutcome = 'success' | 'failure';

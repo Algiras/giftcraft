@@ -1,0 +1,93 @@
+{
+  "triggerKey": "gift_option_ordered",
+  "displayName": "Gift option ordered",
+  "description": "Fires when a customer purchases an order with gift wrapping, greeting cards, or special gift options.",
+  "payloadSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "type": "object",
+    "required": [
+      "contactId",
+      "orderId",
+      "orderNumber",
+      "giftOptionName"
+    ],
+    "additionalProperties": true,
+    "properties": {
+      "contactId": {
+        "type": "string",
+        "format": "uuid",
+        "title": "Customer contact",
+        "identityType": "contact",
+        "examples": [
+          "fc81a355-3429-50fc-a4c7-def486e828f3"
+        ]
+      },
+      "orderId": {
+        "type": "string",
+        "format": "uuid",
+        "title": "Order ID",
+        "examples": [
+          "a1b2c3d4-e5f6-4789-a012-3456789abcde"
+        ]
+      },
+      "orderNumber": {
+        "type": "string",
+        "title": "Order number",
+        "examples": [
+          "10042"
+        ]
+      },
+      "giftOptionName": {
+        "type": "string",
+        "title": "Gift option name",
+        "examples": [
+          "Classic Crimson Ribbon"
+        ]
+      },
+      "greetingCardMessage": {
+        "type": "string",
+        "title": "Greeting card message",
+        "examples": [
+          "Happy Birthday! Wishing you joy and success."
+        ]
+      },
+      "recipientName": {
+        "type": "string",
+        "title": "Recipient name",
+        "examples": [
+          "Jane Doe"
+        ]
+      },
+      "feeAmount": {
+        "type": "number",
+        "title": "Gift fee amount",
+        "examples": [
+          5.0
+        ]
+      },
+      "currency": {
+        "type": "string",
+        "title": "Currency",
+        "examples": [
+          "USD"
+        ]
+      },
+      "itemsCount": {
+        "type": "integer",
+        "title": "Gift wrapped items count",
+        "examples": [
+          1
+        ]
+      }
+    }
+  },
+  "setupNotes": [
+    "URL: https://manage.wix.com/apps/0ed8d640-b905-4fb7-b40b-379652fd6d07/automations-dev-center (NOT /automations).",
+    "Automate: python3 scripts/register_wix_automation_trigger.py --app giftcraft --apply",
+    "Skill: .agents/skills/wix-devcenter-automation-trigger/SKILL.md (workflow: workflows/28-wix-automation-trigger-registration.md).",
+    "Manual: Create Trigger \u2192 Generate from Sample Data \u2192 Convert to Schema \u2192 paste annotated payloadSchema \u2192 Process Schema.",
+    "Then connect contactId (Contact ID) in the UI; Save & Close.",
+    "Merchants: Automations \u2192 GiftCraft \u2192 Gift option ordered \u2192 Send fulfillment task / email notification to packing staff.",
+    "GiftCraft fires this trigger when an order containing GiftCraft modifiers is placed."
+  ]
+}

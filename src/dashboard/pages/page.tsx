@@ -1,26 +1,70 @@
-import { withIntlProvider } from '../../intl/withIntlProvider';
-import { FormattedMessage, useIntl } from 'react-intl';
 import React, { useState, useEffect, useCallback, type ReactNode } from 'react';
-import { WixDesignSystemProvider, Page, Box, Card, Heading, Text, Loader, Button, EmptyState, Badge, StatisticsWidget } from '@wix/design-system';
-import '@wix/design-system/styles.global.css';
+import { FormattedMessage, useIntl } from 'react-intl';
 import { appInstances } from '@wix/app-management';
-import { assessConfigurationStorage, loadConfiguration, saveConfiguration } from '../../shared/configuration';
-import { confirmStorageWithAutoRetry, extractRequestId, type StorageSetupState } from '../../shared/storage-readiness';
+import { orders } from '@wix/ecom';
+import {
+  Badge,
+  Box,
+  Button,
+  Card,
+  EmptyState,
+  Heading,
+  Loader,
+  Page,
+  StatisticsWidget,
+  Text,
+  WixDesignSystemProvider,
+} from '@wix/design-system';
+import '@wix/design-system/styles.global.css';
+
+import { DashboardErrorBoundary } from '@wix-extensions/core/ui';
+import { installGlobalErrorReporting } from '@wix-extensions/core/telemetry';
+import {
+  fetchRecentProductLookups,
+  type ProductLookupItem,
+} from '@wix-extensions/core/lookups';
+
+import { withIntlProvider } from '../../intl/withIntlProvider';
+import {
+  assessConfigurationStorage,
+  loadConfiguration,
+  saveConfiguration,
+} from '../../shared/configuration';
+import {
+  confirmStorageWithAutoRetry,
+  extractRequestId,
+  type StorageSetupState,
+} from '../../shared/storage-readiness';
 import { emitDiagnostic, markDashboardLoaded, markSetupFinished } from '../../shared/logger';
 import { showAppToast } from '../../shared/toast';
-import { AppEntitlement, canUsePaidFeatures, getAppEntitlement, getWixPricingPageUrl } from '../../shared/entitlement';
-import { GiftOption, CheckoutLineItem, GiftSelection } from '../../types';
-import { evaluateGiftOptions, calculateSubtotal, validateGreetingMessage, restrictGiftOptionsForPlan, FREE_PLAN_MAX_ENABLED_OPTIONS } from '../../shared/gift-engine';
+import {
+  AppEntitlement,
+  canUsePaidFeatures,
+  getAppEntitlement,
+  getWixPricingPageUrl,
+} from '../../shared/entitlement';
+import {
+  evaluateGiftOptions,
+  calculateSubtotal,
+  validateGreetingMessage,
+  restrictGiftOptionsForPlan,
+  FREE_PLAN_MAX_ENABLED_OPTIONS,
+} from '../../shared/gift-engine';
+import {
+  resolveEcommerceInstalled,
+  WIX_ECOMMERCE_APP_MARKET_URL,
+  type EcommerceInstallState,
+} from '../../shared/ecommerce';
+import { loadStoreCurrency } from '../../shared/store-currency';
+import type { GiftOption, CheckoutLineItem, GiftSelection } from '../../types';
+
 import { PlanStatusCard } from './components/PlanStatusCard';
 import { StorageStatusCard } from './components/StorageStatusCard';
 import { GiftOptionsTable } from './components/GiftOptionsTable';
 import { AddGiftOptionModal } from './components/AddGiftOptionModal';
 import { DeleteConfirmModal } from './components/DeleteConfirmModal';
 import { CheckoutPreviewCard } from './components/CheckoutPreviewCard';
-import { resolveEcommerceInstalled, WIX_ECOMMERCE_APP_MARKET_URL, type EcommerceInstallState } from '../../shared/ecommerce';
-import { loadStoreCurrency } from '../../shared/store-currency';
-import { DashboardErrorBoundary } from '@wix-extensions/core/ui';
-import { installGlobalErrorReporting } from '@wix-extensions/core/telemetry';
+
 export const APP_ID = '0ed8d640-b905-4fb7-b40b-379652fd6d07';
 
 // Wraps the dashboard tree with the shared DashboardErrorBoundary. This is a
@@ -100,8 +144,19 @@ export function GiftCraftDashboard() {
   const [ecommerceInstalled, setEcommerceInstalled] = useState<EcommerceInstallState>(undefined);
   const [deleteTarget, setDeleteTarget] = useState<GiftOption | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [productLookups, setProductLookups] = useState<ProductLookupItem[]>([]);
   const isPaid = canUsePaidFeatures(entitlement);
   const upgradeUrl = getWixPricingPageUrl(APP_ID, instanceId);
+
+  useEffect(() => {
+    let active = true;
+    void fetchRecentProductLookups(orders, { limit: 50 }).then(items => {
+      if (active) setProductLookups(items);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
   const refreshEntitlement = useCallback(async () => {
     try {
       const [result, nextEntitlement] = await Promise.all([appInstances.getAppInstance(), getAppEntitlement()]);
@@ -360,7 +415,13 @@ export function GiftCraftDashboard() {
 
     {/* Page only recognizes Page.Header/Page.Content/Page.Tail children and silently drops
         anything else, so these modals must render as Page's siblings, not its children. */}
-    <AddGiftOptionModal isOpen={isAddModalOpen} isPaid={isPaid} onClose={() => setIsAddModalOpen(false)} onCreate={handleCreateOption} />
+    <AddGiftOptionModal
+      isOpen={isAddModalOpen}
+      isPaid={isPaid}
+      onClose={() => setIsAddModalOpen(false)}
+      onCreate={handleCreateOption}
+      products={productLookups}
+    />
 
     <DeleteConfirmModal option={deleteTarget} onCancel={() => setDeleteTarget(null)} onConfirm={confirmDeleteOption} />
   </>;
